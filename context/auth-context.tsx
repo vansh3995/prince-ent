@@ -6,7 +6,7 @@ type User = {
   id: string
   name: string
   email: string
-  role: "customer" | "admin" | "staff"
+  role: string
 }
 
 type AuthContextType = {
@@ -23,8 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Check for saved user on mount
   useEffect(() => {
+  if (typeof window !== "undefined") {
     const savedUser = localStorage.getItem("user")
     if (savedUser) {
       try {
@@ -35,67 +35,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     setIsLoading(false)
-  }, [])
+  }
+}, [])
 
-  // Mock users for demo
-  const mockUsers = [
-    {
-      id: "1",
-      name: "Demo User",
-      email: "user@example.com",
-      password: "password123",
-      role: "customer" as const,
-    },
-    {
-      id: "2",
-      name: "Admin User",
-      email: "admin@example.com",
-      password: "admin123",
-      role: "admin" as const,
-    },
-  ]
 
   const login = async (email: string, password: string) => {
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      })
 
-    const foundUser = mockUsers.find((u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password)
+      const data = await res.json()
 
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser
-      setUser(userWithoutPassword)
-      localStorage.setItem("user", JSON.stringify(userWithoutPassword))
+      if (!res.ok) {
+        return { success: false, message: data.msg || "Login failed" }
+      }
+
+      localStorage.setItem("token", data.token)
+      localStorage.setItem("user", JSON.stringify(data.user))
+      setUser(data.user)
+
       return { success: true, message: "Login successful" }
+    } catch (error) {
+      console.error("Login error:", error)
+      return { success: false, message: "Something went wrong" }
     }
-
-    return { success: false, message: "Invalid email or password" }
   }
 
   const register = async (name: string, email: string, password: string) => {
-    // Simulate API call delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, password }),
+      })
 
-    // Check if user already exists
-    if (mockUsers.some((u) => u.email.toLowerCase() === email.toLowerCase())) {
-      return { success: false, message: "Email already in use" }
+      const data = await res.json()
+
+      if (!res.ok) {
+        return { success: false, message: data.message || "Registration failed" }
+      }
+
+      localStorage.setItem("token", data.token)
+      localStorage.setItem("user", JSON.stringify(data.user))
+      setUser(data.user)
+
+      return { success: true, message: "Registration successful" }
+    } catch (error) {
+      console.error("Register error:", error)
+      return { success: false, message: "Something went wrong" }
     }
-
-    // In a real app, you would send this to your backend
-    const newUser = {
-      id: `${mockUsers.length + 1}`,
-      name,
-      email,
-      role: "customer" as const,
-    }
-
-    setUser(newUser)
-    localStorage.setItem("user", JSON.stringify(newUser))
-    return { success: true, message: "Registration successful" }
   }
 
   const logout = () => {
     setUser(null)
     localStorage.removeItem("user")
+    localStorage.removeItem("token")
   }
 
   return <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>{children}</AuthContext.Provider>

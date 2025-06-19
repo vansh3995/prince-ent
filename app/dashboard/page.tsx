@@ -7,8 +7,17 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Package, Truck, FileText, Settings, LogOut } from "lucide-react"
 import Link from "next/link"
+import PrivateRoute from "@/components/PrivateRoute"
 
 export default function DashboardPage() {
+  return (
+    <PrivateRoute>
+      <DashboardContent />
+    </PrivateRoute>
+  )
+}
+
+function DashboardContent() {
   const { user, isLoading, logout } = useAuth()
   const router = useRouter()
 

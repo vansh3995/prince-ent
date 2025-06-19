@@ -1,8 +1,6 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import React, { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
@@ -12,15 +10,20 @@ import { useAuth } from "@/context/auth-context"
 import { AlertCircle, Loader2 } from "lucide-react"
 import Link from "next/link"
 
+type LoginResult = {
+  success: boolean
+  message: string
+}
+
 export default function LoginForm() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
-  const { login } = useAuth()
+  const [email, setEmail] = useState<string>("")
+  const [password, setPassword] = useState<string>("")
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string>("")
+  const { login } = useAuth() as { login: (email: string, password: string) => Promise<LoginResult> }
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError("")
     setIsLoading(true)
@@ -58,7 +61,7 @@ export default function LoginForm() {
               type="email"
               placeholder="Enter your email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               required
             />
           </div>
@@ -75,13 +78,18 @@ export default function LoginForm() {
               type="password"
               placeholder="Enter your password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
               required
             />
           </div>
 
           <div className="flex items-center space-x-2">
-            <input type="checkbox" id="remember" className="rounded text-red-600 focus:ring-red-600" />
+            <input
+              type="checkbox"
+              id="remember"
+              className="rounded text-red-600 focus:ring-red-600"
+              // Optionally, add checked and onChange handlers if you want to use this value
+            />
             <Label htmlFor="remember" className="text-sm cursor-pointer">
               Remember me
             </Label>
