@@ -1,30 +1,37 @@
-import { MongoClient } from "mongodb"
+// lib/mongodb.ts
+import { MongoClient, Db } from "mongodb"
 
-const uri = process.env.MONGODB_URI as string // Set this in your .env.local
+const uri = process.env.MONGODB_URI as string
+
+if (!uri) {
+  throw new Error("❌ Please add your MongoDB URI to .env.local as MONGODB_URI")
+}
+
 const options = {}
 
-let client
+let client: MongoClient
 let clientPromise: Promise<MongoClient>
 
-if (!process.env.MONGODB_URI) {
-  throw new Error("Please add your MongoDB URI to .env.local")
+// Use a global variable in development to prevent multiple connections during hot reloads
+declare global {
+  // eslint-disable-next-line no-var
+  var _mongoClientPromise: Promise<MongoClient> | undefined
 }
 
 if (process.env.NODE_ENV === "development") {
-  // In development, use a global variable so the value is preserved across module reloads
-  if (!(global as any)._mongoClientPromise) {
+  if (!global._mongoClientPromise) {
     client = new MongoClient(uri, options)
-    ;(global as any)._mongoClientPromise = client.connect()
+    global._mongoClientPromise = client.connect()
   }
-  clientPromise = (global as any)._mongoClientPromise
+  clientPromise = global._mongoClientPromise
 } else {
-  // In production, it's best to not use a global variable
+  // In production, do not use a global variable
   client = new MongoClient(uri, options)
   clientPromise = client.connect()
 }
 
-export async function connectToDatabase() {
+export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
   const client = await clientPromise
-  const db = client.db() // Use the default DB from your URI
+  const db = client.db() // will use the DB name in URI
   return { client, db }
 }
