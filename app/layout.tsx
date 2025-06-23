@@ -6,6 +6,8 @@ import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/context/auth-context"
+import { SessionProvider } from "next-auth/react"
+import ClientLayout from "./client-layout"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -21,15 +23,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-
-<html lang="en" suppressHydrationWarning className="light"><body className={inter.className}>
-      <ThemeProvider attribute="class" defaultTheme="light">
-        <AuthProvider>
-          <Header />
-          <main>{children}</main>
-          <Footer />
-        </AuthProvider>
-      </ThemeProvider>
-    </body></html>
+    <html lang="en" suppressHydrationWarning className="light">
+      <body className={inter.className}>
+        <ClientLayout>
+          {children}
+        </ClientLayout>
+      </body>
+    </html>
   )
 }

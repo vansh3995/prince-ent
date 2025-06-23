@@ -16,12 +16,39 @@ export default function QuotePage() {
   const [quoteSubmitted, setQuoteSubmitted] = useState(false)
   const [quoteReference, setQuoteReference] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Generate a random quote reference
-    const reference = "QT" + Math.floor(100000 + Math.random() * 900000)
-    setQuoteReference(reference)
-    setQuoteSubmitted(true)
+    // Form se sabhi values nikaalo
+    const formData = {
+      // Shipment Details
+      serviceType: (document.getElementById("service-type") as HTMLInputElement)?.value || "",
+      shipmentType: (document.querySelector('input[name="shipment-type"]:checked') as HTMLInputElement)?.value || "",
+      origin: (document.getElementById("origin") as HTMLInputElement)?.value || "",
+      destination: (document.getElementById("destination") as HTMLInputElement)?.value || "",
+      weight: (document.getElementById("weight") as HTMLInputElement)?.value || "",
+      packages: (document.getElementById("packages") as HTMLInputElement)?.value || "",
+      description: (document.getElementById("description") as HTMLInputElement)?.value || "",
+      // Contact Info
+      firstName: (document.getElementById("first-name") as HTMLInputElement)?.value || "",
+      lastName: (document.getElementById("last-name") as HTMLInputElement)?.value || "",
+      company: (document.getElementById("company") as HTMLInputElement)?.value || "",
+      email: (document.getElementById("email") as HTMLInputElement)?.value || "",
+      phone: (document.getElementById("phone") as HTMLInputElement)?.value || "",
+      additional: (document.getElementById("additional") as HTMLInputElement)?.value || "",
+    }
+    // API pe bhejo
+    const res = await fetch("/api/quote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
+    })
+    if (res.ok) {
+      const reference = "QT" + Math.floor(100000 + Math.random() * 900000)
+      setQuoteReference(reference)
+      setQuoteSubmitted(true)
+    } else {
+      alert("Failed to submit quote. Please try again.")
+    }
   }
 
   return (

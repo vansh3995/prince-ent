@@ -1,8 +1,8 @@
 "use client"
 
-import type React from "react"
-import axios from "axios"
-import { useState } from "react"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import { ArrowRight, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,6 +16,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 type AddressField = "name" | "phone" | "address" | "city" | "state" | "pincode" | "email" | "date"
 
 export default function BookingPage() {
+  const { status } = useSession()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login?redirect=/booking")
+    }
+  }, [status, router])
+
   const [step, setStep] = useState(1)
   const [bookingComplete, setBookingComplete] = useState(false)
   const [bookingReference, setBookingReference] = useState("")
@@ -84,6 +93,9 @@ export default function BookingPage() {
       }
     }
   }
+
+  if (status === "loading") return <p>Loading...</p>
+  if (status === "unauthenticated") return null
 
   return (
     <div className="container mx-auto px-4 py-12">
