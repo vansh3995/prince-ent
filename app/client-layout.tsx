@@ -12,7 +12,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       <AuthProvider>
         <SessionProvider>
           <Header />
-          <main>{children}</main>
+          <main className="min-h-screen">{children}</main>
           <Footer />
         </SessionProvider>
       </AuthProvider>

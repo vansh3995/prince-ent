@@ -10,11 +10,13 @@ import { useAuth } from "@/context/auth-context"
 import { AlertCircle, Loader2 } from "lucide-react"
 
 export default function RegisterForm() {
-  const [username, setUsername] = useState("")
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [loading, setLoading] = useState(false)
+  const { register } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,24 +24,22 @@ export default function RegisterForm() {
     setError("")
     setSuccess("")
     setLoading(true)
-    const res = await fetch("http://localhost:5000/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    })
-    let data
+    
     try {
-      data = await res.json()
-    } catch {
-      data = { error: "Unknown error" }
+      const result = await register(name, email, password)
+      
+      if (result.success) {
+        setSuccess("Registration successful! Please login.")
+        setTimeout(() => {
+          router.push("/login")
+        }, 2000)
+      } else {
+        setError(result.message)
+      }
+    } catch (error) {
+      setError("Something went wrong. Please try again.")
     }
-    if (!res.ok) {
-      setError(data.error || "Registration failed")
-      console.error(data)
-    } else {
-      setSuccess("Registration successful! Please login.")
-      router.push("/login")
-    }
+    
     setLoading(false)
   }
 
@@ -61,12 +61,24 @@ export default function RegisterForm() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="name">Full Name</Label>
             <Input
-              id="username"
-              placeholder="Enter your username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              id="name"
+              placeholder="Enter your full name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
@@ -80,13 +92,19 @@ export default function RegisterForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={8}
+              minLength={6}
             />
-            <p className="text-xs text-gray-500">Password must be at least 8 characters long</p>
+            <p className="text-xs text-gray-500">Password must be at least 6 characters long</p>
           </div>
 
           <div className="flex items-center space-x-2">
-            <input type="checkbox" id="terms" className="rounded text-red-600 focus:ring-red-600" required />
+            <input 
+              type="checkbox" 
+              id="terms" 
+              className="rounded text-red-600 focus:ring-red-600" 
+              required 
+              title="I agree to the terms and conditions"
+            />
             <Label htmlFor="terms" className="text-sm cursor-pointer">
               I agree to the{" "}
               <a href="/terms" className="text-red-600 hover:underline">

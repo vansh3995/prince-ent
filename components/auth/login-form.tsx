@@ -16,7 +16,7 @@ type LoginResult = {
 }
 
 export default function LoginForm() {
-  const [username, setUsername] = useState<string>("")
+  const [email, setEmail] = useState<string>("")
   const [password, setPassword] = useState<string>("")
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [error, setError] = useState<string>("")
@@ -28,20 +28,19 @@ export default function LoginForm() {
     setError("")
     setIsLoading(true)
 
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    })
-    setIsLoading(false)
-
-    if (res.ok) {
-      // Success: redirect or set session
-      router.push("/dashboard")
-    } else {
-      const data = await res.json()
-      setError(data.message || "Login failed")
+    try {
+      const result = await login(email, password)
+      
+      if (result.success) {
+        router.push("/dashboard")
+      } else {
+        setError(result.message)
+      }
+    } catch (error) {
+      setError("Something went wrong. Please try again.")
     }
+    
+    setIsLoading(false)
   }
 
   return (
@@ -56,13 +55,13 @@ export default function LoginForm() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
-              id="username"
-              type="text"
-              placeholder="Enter your username"
-              value={username}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               required
             />
           </div>
@@ -89,7 +88,7 @@ export default function LoginForm() {
               type="checkbox"
               id="remember"
               className="rounded text-red-600 focus:ring-red-600"
-              // Optionally, add checked and onChange handlers if you want to use this value
+              title="Remember me"
             />
             <Label htmlFor="remember" className="text-sm cursor-pointer">
               Remember me

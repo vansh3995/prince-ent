@@ -1,68 +1,49 @@
 import { NextResponse } from "next/server"
 import { connectToDatabase } from "@/lib/mongodb"
-import { z } from "zod"
-
-// Define your booking schema
-const BookingSchema = z.object({
-  serviceType: z.string(),
-  packageType: z.string(),
-  weight: z.string(),
-  value: z.string(),
-  dimensions: z.object({
-    length: z.string(),
-    width: z.string(),
-    height: z.string(),
-  }),
-  description: z.string(),
-  pickup: z.object({
-    name: z.string(),
-    phone: z.string(),
-    address: z.string(),
-    city: z.string(),
-    state: z.string(),
-    pincode: z.string(),
-    email: z.string().email().optional(),
-    date: z.string().optional(),
-  }),
-  delivery: z.object({
-    name: z.string(),
-    phone: z.string(),
-    address: z.string(),
-    city: z.string(),
-    state: z.string(),
-    pincode: z.string(),
-    email: z.string().email().optional(),
-    date: z.string().optional(),
-  }),
-})
 
 export async function POST(request: Request) {
   try {
     const data = await request.json()
-    // Validate and sanitize input
-    const parsed = BookingSchema.safeParse(data)
-    if (!parsed.success) {
-      return NextResponse.json(
-        { success: false, message: "Invalid data", errors: parsed.error.errors },
-        { status: 400 }
-      )
-    }
     const { db } = await connectToDatabase()
-    const bookingToSave = { ...parsed.data, status: "Pending" }
-    const result = await db.collection("bookings").insertOne(bookingToSave)
+    
+    // Generate unique AWB number
+    const timestamp = Date.now()
+    const random = Math.random().toString(36).substr(2, 4).toUpperCase()
+    const awb = `PE${timestamp}${random}`
+    
+    const booking = {
+      ...data,
+      awb,
+      bookingId: awb,
+      status: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+    
+    const result = await db.collection("bookings").insertOne(booking)
 
-    // Notify admin or relevant personnel about the new booking
+    // Create notification for admin
     await db.collection("notifications").insertOne({
       type: "booking",
-      message: `New booking from ${bookingToSave.pickup?.name || "User"}`,
+      title: "New Booking Created",
+      message: `New booking from ${booking.pickup?.name || "User"}`,
+      bookingId: awb,
+      awb: awb,
       createdAt: new Date(),
       read: false,
     })
 
-    return NextResponse.json({ success: true, id: result.insertedId })
+    return NextResponse.json({
+      success: true,
+      bookingId: awb,
+      awb,
+      id: result.insertedId
+    })
+
   } catch (error) {
+    console.error('Booking creation error:', error)
     return NextResponse.json(
-      { success: false, message: "Booking failed", error: error },
+      { success: false, message: "Failed to create booking" },
       { status: 500 }
     )
   }
@@ -72,19 +53,38 @@ export async function GET(request: Request) {
   try {
     const { db } = await connectToDatabase()
     const url = new URL(request.url)
+    
     const page = parseInt(url.searchParams.get("page") || "1")
     const limit = parseInt(url.searchParams.get("limit") || "10")
+    const userId = url.searchParams.get("userId")
     const skip = (page - 1) * limit
-    const bookings = await db.collection("bookings").find({})
-      .sort({ _id: -1 })
+    
+    const query: any = {}
+    if (userId) {
+      query.userId = userId
+    }
+    
+    const bookings = await db.collection("bookings")
+      .find(query)
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .toArray()
-    const total = await db.collection("bookings").countDocuments()
-    return NextResponse.json({ success: true, bookings, total })
+      
+    const total = await db.collection("bookings").countDocuments(query)
+    
+    return NextResponse.json({
+      success: true,
+      bookings,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
+    })
+    
   } catch (error) {
+    console.error('Fetch bookings error:', error)
     return NextResponse.json(
-      { success: false, message: "Failed to fetch bookings", error },
+      { success: false, message: "Failed to fetch bookings" },
       { status: 500 }
     )
   }
