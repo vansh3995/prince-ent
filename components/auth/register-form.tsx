@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -12,39 +10,37 @@ import { useAuth } from "@/context/auth-context"
 import { AlertCircle, Loader2 } from "lucide-react"
 
 export default function RegisterForm() {
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const { register } = useAuth()
+  const [success, setSuccess] = useState("")
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match")
-      return
-    }
-
-    setIsLoading(true)
-
+    setSuccess("")
+    setLoading(true)
+    const res = await fetch("http://localhost:5000/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    })
+    let data
     try {
-      const result = await register(name, email, password)
-      if (result.success) {
-        router.push("/dashboard")
-      } else {
-        setError(result.message)
-      }
-    } catch (err) {
-      setError("An unexpected error occurred. Please try again.")
-      console.error(err)
-    } finally {
-      setIsLoading(false)
+      data = await res.json()
+    } catch {
+      data = { error: "Unknown error" }
     }
+    if (!res.ok) {
+      setError(data.error || "Registration failed")
+      console.error(data)
+    } else {
+      setSuccess("Registration successful! Please login.")
+      router.push("/login")
+    }
+    setLoading(false)
   }
 
   return (
@@ -57,26 +53,20 @@ export default function RegisterForm() {
               <span>{error}</span>
             </div>
           )}
+          {success && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md flex items-start">
+              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+              <span>{success}</span>
+            </div>
+          )}
 
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
+            <Label htmlFor="username">Username</Label>
             <Input
-              id="name"
-              placeholder="Enter your full name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="username"
+              placeholder="Enter your username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>
@@ -95,18 +85,6 @@ export default function RegisterForm() {
             <p className="text-xs text-gray-500">Password must be at least 8 characters long</p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirm Password</Label>
-            <Input
-              id="confirm-password"
-              type="password"
-              placeholder="Confirm your password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-          </div>
-
           <div className="flex items-center space-x-2">
             <input type="checkbox" id="terms" className="rounded text-red-600 focus:ring-red-600" required />
             <Label htmlFor="terms" className="text-sm cursor-pointer">
@@ -123,10 +101,10 @@ export default function RegisterForm() {
         </CardContent>
 
         <CardFooter>
-          <Button type="submit" className="w-full bg-red-600 hover:bg-red-700" disabled={isLoading}>
-            {isLoading ? (
+          <Button type="submit" className="w-full bg-red-600 hover:bg-red-700" disabled={loading}>
+            {loading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Account...
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Registering...
               </>
             ) : (
               "Register"

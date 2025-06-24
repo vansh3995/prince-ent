@@ -16,7 +16,7 @@ type LoginResult = {
 }
 
 export default function LoginForm() {
-  const [email, setEmail] = useState<string>("")
+  const [username, setUsername] = useState<string>("")
   const [password, setPassword] = useState<string>("")
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [error, setError] = useState<string>("")
@@ -28,18 +28,19 @@ export default function LoginForm() {
     setError("")
     setIsLoading(true)
 
-    try {
-      const result = await login(email, password)
-      if (result.success) {
-        router.push("/dashboard")
-      } else {
-        setError(result.message)
-      }
-    } catch (err) {
-      setError("An unexpected error occurred. Please try again.")
-      console.error(err)
-    } finally {
-      setIsLoading(false)
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    })
+    setIsLoading(false)
+
+    if (res.ok) {
+      // Success: redirect or set session
+      router.push("/dashboard")
+    } else {
+      const data = await res.json()
+      setError(data.message || "Login failed")
     }
   }
 
@@ -55,13 +56,13 @@ export default function LoginForm() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="username">Username</Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+              id="username"
+              type="text"
+              placeholder="Enter your username"
+              value={username}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
               required
             />
           </div>
