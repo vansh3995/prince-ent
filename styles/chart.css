@@ -1,0 +1,10 @@
+/* Create this new file */
+
+.chart-legend-indicator {
+  background-color: var(--indicator-color, #888);
+}
+
+/* Alternative approach using data attributes */
+[data-color] {
+  background-color: attr(data-color color, #888);
+}

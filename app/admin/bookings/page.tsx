@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -77,16 +77,7 @@ export default function AdminBookingsPage() {
   const limit = 10
   const role = session?.user?.role
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/admin/login")
-    }
-    if (status === "authenticated") {
-      fetchBookings()
-    }
-  }, [status, page, router])
-
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     setLoading(true)
     try {
       const res = await fetch(`/api/bookings?page=${page}&limit=${limit}`)
@@ -104,7 +95,16 @@ export default function AdminBookingsPage() {
       toast.error('Failed to fetch bookings')
     }
     setLoading(false)
-  }
+  }, [page, limit])
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/admin/login")
+    }
+    if (status === "authenticated") {
+      fetchBookings()
+    }
+  }, [status, page, router, fetchBookings])
 
   // Filter and search logic
   const filteredBookings = bookings.filter((booking) => {

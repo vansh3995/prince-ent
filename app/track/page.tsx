@@ -290,7 +290,7 @@ export default function TrackBookingPage() {
               </li>
               <li className="flex items-center">
                 <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
-                Click "Track Parcel" or press Enter to search
+                Click &quot;Track Parcel&quot; or press Enter to search
               </li>
               <li className="flex items-center">
                 <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>

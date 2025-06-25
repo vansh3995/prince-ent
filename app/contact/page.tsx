@@ -38,7 +38,7 @@ export default function ContactPage() {
             <div>
               <h2 className="text-3xl font-bold mb-6">Get In Touch</h2>
               <p className="text-gray-600 mb-8">
-                We're here to help with any questions you may have about our services. Reach out to us through any of
+                We&apos;re here to help with any questions you may have about our services. Reach out to us through any of
                 the channels below or fill out the contact form.
               </p>
 
@@ -107,7 +107,7 @@ export default function ContactPage() {
                   <CardHeader>
                     <CardTitle>Send Us a Message</CardTitle>
                     <CardDescription>
-                      Fill out the form below and we'll get back to you as soon as possible
+                      Fill out the form below and we&apos;ll get back to you as soon as possible
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
