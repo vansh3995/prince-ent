@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
@@ -20,12 +20,27 @@ export default function DashboardPage() {
 function DashboardContent() {
   const { user, isLoading, logout } = useAuth()
   const router = useRouter()
+  const [userBookings, setUserBookings] = useState([])
 
   useEffect(() => {
     if (!isLoading && !user) {
       router.push("/login")
     }
   }, [user, isLoading, router])
+
+  useEffect(() => {
+    const fetchUserBookings = async () => {
+      const res = await fetch(`/api/bookings?userId=${user?.id}`)
+      const data = await res.json()
+      if (data.success) {
+        setUserBookings(data.bookings)
+      }
+    }
+
+    if (user?.id) {
+      fetchUserBookings()
+    }
+  }, [user])
 
   if (isLoading) {
     return (

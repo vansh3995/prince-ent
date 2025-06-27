@@ -1,26 +1,23 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { useAdminAuth } from "@/context/admin-auth-context"
 
 export default function AdminQuotesPage() {
-  const { status } = useSession()
+  const { user, isAuthenticated } = useAdminAuth()
   const router = useRouter()
   const [quotes, setQuotes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const { data: session } = useSession()
-  const role = session?.user?.role
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (!isAuthenticated) {
       router.push("/admin/login")
-    }
-    if (status === "authenticated") {
+    } else {
       fetchQuotes()
     }
     // eslint-disable-next-line
-  }, [status])
+  }, [isAuthenticated])
 
   const fetchQuotes = async () => {
     setLoading(true)
@@ -30,17 +27,16 @@ export default function AdminQuotesPage() {
     setLoading(false)
   }
 
-  if (status === "loading") return <p>Checking authentication...</p>
-  if (status === "unauthenticated") return null
+  if (!isAuthenticated) return null
 
-  if (role !== "superadmin") {
+  if (user?.role !== "superadmin" && user?.role !== "admin") {
     return <p>Access denied. You do not have the necessary permissions to view this page.</p>
   }
 
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-2xl font-bold mb-6">All Quote Requests</h1>
-      {role === "superadmin" && (
+      {user?.role === "superadmin" && (
         <button className="bg-green-600 text-white px-4 py-2 rounded mb-4">
           Export Quotes
         </button>

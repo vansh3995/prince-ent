@@ -58,6 +58,7 @@ export default function StaffManagementPage() {
                     onChange={e => handleRoleChange(u._id, e.target.value)}
                     disabled={u.email === session?.user?.email}
                     className="border px-2 py-1 rounded"
+                    aria-label={`Change role for ${u.username}`}
                   >
                     <option value="superadmin">Superadmin</option>
                     <option value="staff">Staff</option>

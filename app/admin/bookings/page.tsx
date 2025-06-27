@@ -1,24 +1,10 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import toast, { Toaster } from "react-hot-toast"
-
-// Extend the session user type to include 'role'
-import type { DefaultSession } from "next-auth"
-
-declare module "next-auth" {
-  interface Session {
-    user: {
-      role?: string
-    } & DefaultSession["user"]
-  }
-  interface User {
-    role?: string
-  }
-}
+import { useAdminAuth } from "@/context/admin-auth-context"
 
 const STATUS_OPTIONS = ["pending", "confirmed", "picked_up", "in_transit", "out_for_delivery", "delivered", "cancelled"]
 
@@ -62,7 +48,7 @@ interface Booking {
 }
 
 export default function AdminBookingsPage() {
-  const { data: session, status } = useSession()
+  const { user, isLoading, isAuthenticated } = useAdminAuth()
   const router = useRouter()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
@@ -75,7 +61,7 @@ export default function AdminBookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const limit = 10
-  const role = session?.user?.role
+  const role = user?.role
 
   const fetchBookings = useCallback(async () => {
     setLoading(true)
@@ -98,13 +84,13 @@ export default function AdminBookingsPage() {
   }, [page, limit])
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (!isLoading && !isAuthenticated) {
       router.push("/admin/login")
     }
-    if (status === "authenticated") {
+    if (isAuthenticated) {
       fetchBookings()
     }
-  }, [status, page, router, fetchBookings])
+  }, [isLoading, isAuthenticated, page, router, fetchBookings])
 
   // Filter and search logic
   const filteredBookings = bookings.filter((booking) => {
@@ -198,8 +184,17 @@ export default function AdminBookingsPage() {
     URL.revokeObjectURL(url)
   }
 
-  if (status === "loading") return <p>Checking authentication...</p>
-  if (status === "unauthenticated") return null
+  // Add driver management
+  const assignDriver = async (bookingId: string, driverId: string) => {
+    await fetch(`/api/bookings/${bookingId}/assign-driver`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ driverId })
+    })
+  }
+
+  if (isLoading) return <p>Checking authentication...</p>
+  if (!isAuthenticated) return null
 
   return (
     <div className="container mx-auto py-8">

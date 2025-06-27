@@ -1,22 +1,22 @@
 "use client"
 import { useEffect, useState } from "react"
-import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { useAdminAuth } from "@/context/admin-auth-context"
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend,
 } from "recharts"
 
 export default function AdminAnalyticsPage() {
-  const { status } = useSession()
+  const { isAuthenticated } = useAdminAuth()
   const router = useRouter()
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/admin/login")
-    if (status === "authenticated") fetchStats()
+    if (!isAuthenticated) router.push("/admin/login")
+    if (isAuthenticated) fetchStats()
     // eslint-disable-next-line
-  }, [status])
+  }, [isAuthenticated])
 
   const fetchStats = async () => {
     setLoading(true)
@@ -26,8 +26,7 @@ export default function AdminAnalyticsPage() {
     setLoading(false)
   }
 
-  if (status === "loading") return <p>Loading...</p>
-  if (status === "unauthenticated") return null
+  if (!isAuthenticated) return null
 
   return (
     <div className="container mx-auto py-8">

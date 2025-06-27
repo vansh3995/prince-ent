@@ -58,11 +58,12 @@ export default function BookingPage() {
   useEffect(() => {
     const checkAuth = () => {
       try {
-        // Check for stored auth token
-        const token = localStorage.getItem('authToken') || 
-                     sessionStorage.getItem('authToken') ||
-                     localStorage.getItem('token') ||
-                     sessionStorage.getItem('token')
+        // Check for stored auth token from admin auth or user auth
+        const token = localStorage.getItem('adminToken') || 
+                      localStorage.getItem('authToken') || 
+                      sessionStorage.getItem('authToken') ||
+                      localStorage.getItem('token') ||
+                      sessionStorage.getItem('token')
         
         // Check for user data
         const userData = localStorage.getItem('userData') || sessionStorage.getItem('userData')
@@ -250,6 +251,46 @@ export default function BookingPage() {
     }
   }
 
+  // Simple shipping cost calculator
+  const calculateShippingCost = (bookingData: any): number => {
+    // Example logic: base + per kg + service type multiplier
+    const base = 100;
+    const weight = parseFloat(bookingData.weight || bookingData.formData?.weight || "1");
+    let multiplier = 1;
+    switch (bookingData.serviceType || bookingData.formData?.serviceType) {
+      case "express":
+        multiplier = 1.5;
+        break;
+      case "standard":
+        multiplier = 1.2;
+        break;
+      case "economy":
+        multiplier = 1;
+        break;
+      default:
+        multiplier = 1;
+    }
+    return Math.round((base + weight * 50) * multiplier);
+  };
+
+  const initiatePayment = async (bookingData: any) => {
+    try {
+      const response = await fetch('/api/payment/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: calculateShippingCost(bookingData),
+          bookingId: bookingData.awb
+        })
+      })
+      
+      const { paymentUrl } = await response.json()
+      window.location.href = paymentUrl
+    } catch (error) {
+      console.error('Payment initialization failed:', error)
+    }
+  }
+
   const handleLogout = () => {
     localStorage.removeItem('authToken')
     sessionStorage.removeItem('authToken')
@@ -297,7 +338,7 @@ export default function BookingPage() {
   }
 
   // Show loading screen while checking authentication
-  if (loading) {
+  if (loading || status === "loading") {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -306,6 +347,11 @@ export default function BookingPage() {
         </div>
       </div>
     )
+  }
+
+  if (status === "unauthenticated") {
+    router.push('/login?redirect=/booking')
+    return null
   }
 
   return (

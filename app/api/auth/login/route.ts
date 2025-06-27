@@ -22,6 +22,24 @@ export async function POST(request: NextRequest) {
     const user = await db.collection('users').findOne({ email })
     console.log('👤 User found:', user ? `Yes (${user.role})` : 'No')
     
+    console.log('🔍 Found user:', user ? 'YES' : 'NO');
+    console.log('🔍 Database name:', db.databaseName);
+    console.log('🔍 Search email:', email);
+    
+    // Debug: Check all users in collection
+    const allUsers = await db.collection('users').find({}).toArray()
+    console.log('📊 Total users in DB:', allUsers.length);
+    allUsers.forEach((u, index) => {
+      console.log(`👤 User ${index + 1}: ${u.email} (${u.role})`);
+    });
+    
+    if (user) {
+      console.log('👤 User role:', user.role);
+      console.log('🔐 Hash password:', !!user.password);
+      console.log('📧 Email match:', user.email === email);
+      console.log('📧 Email lowercase match:', user.email === email.toLowerCase());
+    }
+
     if (!user) {
       return NextResponse.json(
         { success: false, message: 'Invalid credentials' },
@@ -40,8 +58,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user is admin or superadmin
-    if (!user.role || (user.role !== 'admin' && user.role !== 'superadmin')) {
+    // Check if user is admin
+    if (user.role !== 'admin' && user.role !== 'superadmin') {
       return NextResponse.json(
         { success: false, message: 'Access denied. Admin privileges required.' },
         { status: 403 }

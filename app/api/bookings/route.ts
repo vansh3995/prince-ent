@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server"
 import { connectToDatabase } from "@/lib/mongodb"
+import { sendEmail } from "@/lib/email"
 
 export async function POST(request: Request) {
   try {
     const data = await request.json()
     const { db } = await connectToDatabase()
     
-    // Generate unique AWB number
-    const timestamp = Date.now()
-    const random = Math.random().toString(36).substr(2, 4).toUpperCase()
-    const awb = `PE${timestamp}${random}`
+    // Generate unique AWB number starting with AV + 8 random digits
+    const randomDigits = () => {
+      let digits = ''
+      for (let i = 0; i < 8; i++) {
+        digits += Math.floor(Math.random() * 10).toString()
+      }
+      return digits
+    }
+    const awb = `AV${randomDigits()}`
     
     const booking = {
       ...data,
@@ -32,6 +38,16 @@ export async function POST(request: Request) {
       createdAt: new Date(),
       read: false,
     })
+
+    // Send booking confirmation email
+    if (booking.email) {
+      const emailHtml = `
+        <h1>Booking Confirmation</h1>
+        <p>Thank you for your booking. Your AWB number is <strong>${awb}</strong>.</p>
+        <p>We will keep you updated on the status of your shipment.</p>
+      `
+      await sendEmail(booking.email, "Booking Confirmation - Prince Enterprises", emailHtml)
+    }
 
     return NextResponse.json({
       success: true,

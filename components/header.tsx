@@ -6,8 +6,7 @@ import { Truck, Menu, X, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
-import { useAuth } from "@/context/auth-context"
-import { useSession, signOut } from "next-auth/react"
+import { useAdminAuth } from "@/context/admin-auth-context"
 
 const navItems = [
 	{ name: "About Us", href: "/about" },
@@ -18,11 +17,14 @@ const navItems = [
 	{ name: "Contact Us", href: "/contact" },
 ]
 
+const adminNavItems = [
+	{ name: "Dashboard", href: "/admin" }
+]
+
 export default function Header() {
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 	const pathname = usePathname()
-	const { user, logout } = useAuth()
-	const { data: session, status } = useSession()
+	const { user, logout } = useAdminAuth()
 
 	return (
 		<header className="border-b bg-white shadow-sm sticky top-0 z-50">
@@ -51,32 +53,24 @@ export default function Header() {
 								{item.name}
 							</Link>
 						))}
-						{status === "authenticated" ? (
+						{user ? (
 							<>
+								{adminNavItems.map((item) => (
+									<Link
+										key={item.name}
+										href={item.href}
+										className={cn(
+											"text-gray-700 hover:text-red-600 font-medium transition-colors",
+											pathname === item.href && "text-red-600 font-semibold",
+										)}
+									>
+										{item.name}
+									</Link>
+								))}
 								<span className="mr-4">Welcome, Admin</span>
 								<Button
-									onClick={() => signOut({ callbackUrl: "/admin/login" })}
-									className="bg-red-600 hover:bg-red-700 text-white"
-								>
-									Logout
-								</Button>
-							</>
-						) : user ? (
-							<>
-								<Link href="/dashboard">
-									<Button
-										variant="outline"
-										size="sm"
-										className="flex items-center space-x-2"
-									>
-										<User className="h-4 w-4" />
-										<span>Dashboard</span>
-									</Button>
-								</Link>
-								<Button
-									size="sm"
-									className="bg-red-600 hover:bg-red-700"
 									onClick={logout}
+									className="bg-red-600 hover:bg-red-700 text-white"
 								>
 									Logout
 								</Button>
@@ -140,40 +134,15 @@ export default function Header() {
 							</Link>
 						))}
 						<div className="pt-4 flex flex-col space-y-2">
-							{status === "authenticated" ? (
+							{user ? (
 								<>
 									<span className="text-center mb-2">Welcome, Admin</span>
 									<Button
 										onClick={() => {
 											setMobileMenuOpen(false)
-											signOut({ callbackUrl: "/admin/login" })
-										}}
-										className="bg-red-600 hover:bg-red-700 text-white"
-									>
-										Logout
-									</Button>
-								</>
-							) : user ? (
-								<>
-									<Link
-										href="/dashboard"
-										onClick={() => setMobileMenuOpen(false)}
-									>
-										<Button
-											variant="outline"
-											size="sm"
-											className="w-full justify-center"
-										>
-											Dashboard
-										</Button>
-									</Link>
-									<Button
-										size="sm"
-										className="bg-red-600 hover:bg-red-700 justify-center"
-										onClick={() => {
-											setMobileMenuOpen(false)
 											logout()
 										}}
+										className="bg-red-600 hover:bg-red-700 text-white"
 									>
 										Logout
 									</Button>

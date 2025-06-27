@@ -1,15 +1,27 @@
 "use client"
-import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 export default function AdminHome() {
-  const { status } = useSession()
   const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true)
 
-  if (status === "loading") return <p>Loading...</p>
-  if (status === "unauthenticated") {
-    router.push("/admin/login")
-    return null
+  useEffect(() => {
+    // Check if admin token exists
+    const token = localStorage.getItem('adminToken')
+    if (!token) {
+      router.push("/admin/login")
+      return
+    }
+    setIsLoading(false)
+  }, [router])
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-xl">Loading...</p>
+      </div>
+    )
   }
 
   return (
