@@ -1,16 +1,25 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAdminAuth } from "@/context/admin-auth-context"
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [credentials, setCredentials] = useState({
+    username: "",
+    password: "",
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const { login, user } = useAdminAuth()
   const router = useRouter()
-  const { login } = useAdminAuth()
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      router.push("/admin")
+    }
+  }, [user, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -18,28 +27,29 @@ export default function AdminLogin() {
     setError("")
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        // Use the context login method
-        login(data.token, data.user)
-        router.push('/admin')
+      const success = await login(credentials)
+      if (success) {
+        router.push("/admin")
       } else {
-        setError(data.message || 'Login failed')
+        setError("Invalid credentials")
       }
     } catch (error) {
-      setError('Login failed. Please try again.')
+      setError("Login failed. Please try again.")
     } finally {
       setLoading(false)
     }
+  }
+
+  // Don't render login form if user is already authenticated
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4">Redirecting...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -47,40 +57,47 @@ export default function AdminLogin() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Admin Sign In
+            Admin Login
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Prince Enterprises Admin Panel
-          </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <input
-                type="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <input
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
+          <div>
+            <label htmlFor="username" className="sr-only">
+              Username
+            </label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              required
+              value={credentials.username}
+              onChange={(e) =>
+                setCredentials({ ...credentials, username: e.target.value })
+              }
+              className="relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Username"
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="sr-only">
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              value={credentials.password}
+              onChange={(e) =>
+                setCredentials({ ...credentials, password: e.target.value })
+              }
+              className="relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Password"
+            />
           </div>
 
           {error && (
-            <div className="text-red-600 text-sm text-center bg-red-50 p-2 rounded">
-              {error}
-            </div>
+            <div className="text-red-600 text-sm text-center">{error}</div>
           )}
 
           <div>
@@ -93,12 +110,6 @@ export default function AdminLogin() {
             </button>
           </div>
         </form>
-
-        <div className="text-center text-xs text-gray-500 bg-yellow-50 p-3 rounded">
-          <p className="font-semibold">Test Credentials:</p>
-          <p>📧 Email: admin@princeenterprises.com</p>
-          <p>🔑 Password: admin123</p>
-        </div>
       </div>
     </div>
   )

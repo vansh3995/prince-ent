@@ -68,14 +68,13 @@ export async function POST(request: NextRequest) {
 
     // Create JWT token
     const token = jwt.sign(
-      { 
-        userId: user._id.toString(),
+      {
+        userId: user._id,
         email: user.email,
-        role: user.role,
-        name: user.name
+        role: user.role
       },
-      process.env.JWT_SECRET || 'fallback_secret',
-      { expiresIn: '24h' }
+      process.env.JWT_SECRET!,
+      { expiresIn: "7d" }
     )
 
     console.log('✅ Admin login successful for:', email)
@@ -83,14 +82,14 @@ export async function POST(request: NextRequest) {
     // Create response
     const response = NextResponse.json({
       success: true,
-      message: 'Login successful',
+      message: "Login successful",
+      token,
       user: {
-        id: user._id.toString(),
+        id: user._id,
         email: user.email,
         name: user.name,
         role: user.role
-      },
-      token: token
+      }
     })
 
     // Set HTTP-only cookie

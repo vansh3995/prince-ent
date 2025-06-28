@@ -49,6 +49,13 @@ export default function AdminHome() {
           <h2 className="text-xl font-semibold mb-2">Analytics</h2>
           <p>See booking trends and city-wise stats.</p>
         </div>
+        <div
+          className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
+          onClick={() => router.push("/admin/analytics/live")}
+        >
+          <h2 className="text-xl font-semibold mb-2">🔴 Live Analytics</h2>
+          <p className="text-gray-600">Real-time monitoring</p>
+        </div>
       </div>
     </div>
   )

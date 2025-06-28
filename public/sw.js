@@ -10,3 +10,18 @@ self.addEventListener('push', function(event) {
     self.registration.showNotification('Prince Enterprises', options)
   )
 })
+
+const CACHE_NAME = 'pe-logistics-v1'
+const urlsToCache = [
+  '/',
+  '/track',
+  '/booking',
+  '/manifest.json'
+]
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(urlsToCache))
+  )
+})
