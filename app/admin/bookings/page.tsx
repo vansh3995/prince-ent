@@ -48,7 +48,10 @@ interface Booking {
 }
 
 export default function AdminBookingsPage() {
-  const { user, isLoading, isAuthenticated } = useAdminAuth()
+  const { user, isAuthenticated } = useAdminAuth()
+
+  // Allowed roles for booking page access
+  const allowedRoles = ['user', 'admin', 'superadmin']
   const router = useRouter()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
@@ -66,7 +69,12 @@ export default function AdminBookingsPage() {
   const fetchBookings = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/bookings?page=${page}&limit=${limit}`)
+      const token = localStorage.getItem('admin-token')
+      const res = await fetch(`/api/bookings?page=${page}&limit=${limit}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
       const data = await res.json()
       
       if (data.success) {
@@ -84,13 +92,17 @@ export default function AdminBookingsPage() {
   }, [page, limit])
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isAuthenticated) {
       router.push("/admin/login")
     }
-    if (isAuthenticated) {
+    // Redirect if user role is not allowed
+    else if (isAuthenticated && !allowedRoles.includes(user?.role || '')) {
+      router.push("/admin/login")
+    }
+    else if (isAuthenticated) {
       fetchBookings()
     }
-  }, [isLoading, isAuthenticated, page, router, fetchBookings])
+  }, [isAuthenticated, user, page, router, fetchBookings])
 
   // Filter and search logic
   const filteredBookings = bookings.filter((booking) => {
@@ -193,7 +205,6 @@ export default function AdminBookingsPage() {
     })
   }
 
-  if (isLoading) return <p>Checking authentication...</p>
   if (!isAuthenticated) return null
 
   return (
@@ -332,24 +343,31 @@ export default function AdminBookingsPage() {
                         className="mr-2"
                         title="Select booking"
                       />
-                      <span className="font-bold text-blue-600">
-                        AWB: {booking.awb || booking.bookingId || 'Not Generated'}
-                      </span>
-                    </div>
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                      booking.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                      booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                      booking.status === 'in_transit' ? 'bg-blue-100 text-blue-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {booking.status?.replace('_', ' ').toUpperCase() || 'PENDING'}
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent
-                  onClick={() => setSelectedBooking(booking)}
-                  className="cursor-pointer"
-                >
+                  <span
+                    className="font-bold text-blue-600 cursor-pointer underline"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      router.push(`/track?awb=${booking.awb}`)
+                    }}
+                    title="Track this shipment"
+                  >
+                    AWB: {booking.awb || booking.bookingId || 'Not Generated'}
+                  </span>
+                </div>
+                <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                  booking.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                  booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                  booking.status === 'in_transit' ? 'bg-blue-100 text-blue-800' :
+                  'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {booking.status?.replace('_', ' ').toUpperCase() || 'PENDING'}
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent
+              onClick={() => setSelectedBooking(booking)}
+              className="cursor-pointer"
+            >
                   <p><strong>Service:</strong> {booking.serviceType}</p>
                   <p><strong>Package:</strong> {booking.packageType}</p>
                   <p><strong>Pickup:</strong> {booking.pickup?.name} - {booking.pickup?.city}</p>

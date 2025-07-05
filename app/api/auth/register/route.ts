@@ -1,65 +1,41 @@
 import { NextRequest, NextResponse } from "next/server"
-import { connectToDatabase } from "@/lib/mongodb"
-import bcrypt from "bcryptjs"
 
 export async function POST(request: NextRequest) {
   try {
     const { name, email, password } = await request.json()
 
+    // Basic validation
     if (!name || !email || !password) {
       return NextResponse.json(
-        { message: "Name, email and password are required" },
+        { message: "All fields are required" },
         { status: 400 }
       )
     }
 
     if (password.length < 6) {
       return NextResponse.json(
-        { message: "Password must be at least 6 characters long" },
+        { message: "Password must be at least 6 characters" },
         { status: 400 }
       )
     }
 
-    const { db } = await connectToDatabase()
-    
-    // Check if user already exists
-    const existingUser = await db.collection("users").findOne({ email })
-    
-    if (existingUser) {
-      return NextResponse.json(
-        { message: "User already exists with this email" },
-        { status: 409 }
-      )
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12)
-
-    // Create user
-    const result = await db.collection("users").insertOne({
+    // Create user object (in production, save to database)
+    const user = {
+      id: Date.now().toString(),
       name,
       email,
-      password: hashedPassword,
-      role: "user",
-      createdAt: new Date()
-    })
-
-    const userResponse = {
-      id: result.insertedId,
-      name,
-      email,
-      role: "user"
+      role: "user" as const,
     }
 
-    // Create a simple token (you might want to use JWT here)
-    const token = Buffer.from(`${result.insertedId}:${email}`).toString('base64')
+    // Generate simple token (in production, use proper JWT)
+    const token = `token_${user.id}_${Date.now()}`
 
     return NextResponse.json({
+      success: true,
       message: "Registration successful",
+      user,
       token,
-      user: userResponse
     })
-
   } catch (error) {
     console.error("Registration error:", error)
     return NextResponse.json(

@@ -1,59 +1,50 @@
+﻿require('dotenv').config({ path: '.env.local' });
 const { MongoClient } = require('mongodb');
 const bcrypt = require('bcryptjs');
-require('dotenv').config({ path: '.env.local' });
 
-async function resetDatabase() {
+async function quickReset() {
   try {
-    console.log('🔄 Connecting to database...');
-    const client = new MongoClient(process.env.MONGODB_URI);
+    console.log(' Starting quick database reset...');
+    
+    const uri = process.env.MONGODB_URI;
+    
+    if (!uri) {
+      throw new Error('MONGODB_URI not found in environment variables');
+    }
+    
+    console.log(' Connecting to MongoDB Atlas...');
+    const client = new MongoClient(uri);
+    
     await client.connect();
-    console.log('✅ Connected to MongoDB');
+    console.log(' Connected to MongoDB Atlas');
     
-    const db = client.db('prince-ent'); // Explicitly specify database name
-
-    // Create admin user with BOTH roles
-    console.log('🔐 Creating admin user...');
+    const db = client.db('prince-ent');
     
-    // Use exact same method as login API
-    const adminPassword = 'admin123';
-    const hashedPassword = await bcrypt.hash(adminPassword, 12);
+    // Create admin user
+    console.log(' Creating admin user...');
+    const hashedPassword = await bcrypt.hash('admin123', 10);
     
-    // Test hash immediately
-    const testHash = await bcrypt.compare(adminPassword, hashedPassword);
-    console.log('🧪 Hash test:', testHash ? '✅ PASS' : '❌ FAIL');
-
-    const adminUser = {
-      name: 'Admin',
+    await db.collection('admins').deleteMany({});
+    await db.collection('admins').insertOne({
+      username: 'admin',
       email: 'admin@princeenterprises.com',
       password: hashedPassword,
       role: 'admin',
-      createdAt: new Date(),
-      isVerified: true,
-      isActive: true
-    };
-
-    // Delete and recreate
-    await db.collection('users').deleteOne({ email: 'admin@princeenterprises.com' });
-    const result = await db.collection('users').insertOne(adminUser);
-
-    console.log('✅ Admin user created!');
-    console.log('📧 Email: admin@princeenterprises.com');
-    console.log('🔑 Password: admin123');
-    console.log('👤 Role: admin');
-
-    // Final verification
-    const verifyUser = await db.collection('users').findOne({ email: 'admin@princeenterprises.com' });
-    if (verifyUser) {
-      const finalTest = await bcrypt.compare('admin123', verifyUser.password);
-      console.log('🎯 Final test:', finalTest ? '✅ SUCCESS' : '❌ FAIL');
-    }
-
+      createdAt: new Date()
+    });
+    
+    console.log(' Admin user created successfully');
+    console.log(' Email: admin@princeenterprises.com');
+    console.log(' Username: admin');
+    console.log(' Password: admin123');
+    
     await client.close();
-    console.log('🎉 Reset complete!');
-
+    console.log(' Database reset completed');
+    
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error(' Error during reset:', error.message);
+    process.exit(1);
   }
 }
 
-resetDatabase();
+quickReset();

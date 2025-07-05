@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -10,8 +10,7 @@ import {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
 
 export default function AdminAnalyticsPage() {
-  const adminAuth = useAdminAuth()
-  const isAuthenticated = !!adminAuth.user // Assumes 'user' is defined when authenticated
+  const { admin, isLoading } = useAdminAuth()
   const router = useRouter()
   const [analytics, setAnalytics] = useState({
     dailyBookings: [],
@@ -22,10 +21,14 @@ export default function AdminAnalyticsPage() {
   })
 
   useEffect(() => {
-    if (!isAuthenticated) router.push("/admin/login")
-    if (isAuthenticated) fetchAnalytics()
-    // eslint-disable-next-line
-  }, [isAuthenticated])
+    if (!isLoading) {
+      if (!admin) {
+        router.push("/admin/login")
+      } else {
+        fetchAnalytics()
+      }
+    }
+  }, [admin, isLoading, router])
 
   const fetchAnalytics = async () => {
     try {
@@ -45,7 +48,15 @@ export default function AdminAnalyticsPage() {
     }
   }
 
-  if (!isAuthenticated) return null
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    )
+  }
+
+  if (!admin) return null
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -64,7 +75,7 @@ export default function AdminAnalyticsPage() {
               Advanced Analytics
             </button>
             <button
-              onClick={() => router.push('/admin')}
+              onClick={() => router.push('/admin/dashboard')}
               className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
             >
               Back to Dashboard
@@ -77,7 +88,7 @@ export default function AdminAnalyticsPage() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span className="text-2xl">📦</span>
+                <span className="text-2xl"></span>
               </div>
               <div className="ml-4">
                 <p className="text-sm text-gray-600">Total Bookings</p>
@@ -89,7 +100,7 @@ export default function AdminAnalyticsPage() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-2xl">💰</span>
+                <span className="text-2xl"></span>
               </div>
               <div className="ml-4">
                 <p className="text-sm text-gray-600">Total Revenue</p>
@@ -101,7 +112,7 @@ export default function AdminAnalyticsPage() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <span className="text-2xl">🚚</span>
+                <span className="text-2xl"></span>
               </div>
               <div className="ml-4">
                 <p className="text-sm text-gray-600">In Transit</p>
@@ -113,7 +124,7 @@ export default function AdminAnalyticsPage() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <span className="text-2xl">✅</span>
+                <span className="text-2xl"></span>
               </div>
               <div className="ml-4">
                 <p className="text-sm text-gray-600">Delivered</p>

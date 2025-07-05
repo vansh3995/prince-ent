@@ -1,42 +1,63 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Search } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
+import { useState } from 'react'
+import { Search } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 interface TrackingFormProps {
   minimal?: boolean
-  className?: string
 }
 
-export default function TrackingForm({ minimal = false, className }: TrackingFormProps) {
-  const [trackingNumber, setTrackingNumber] = useState("")
-  const router = useRouter()
+export default function TrackingForm({ minimal = false }: TrackingFormProps) {
+  const [trackingNumber, setTrackingNumber] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (trackingNumber.trim()) {
-      router.push(`/track?id=${encodeURIComponent(trackingNumber.trim())}`)
+      window.location.href = `/track?number=${encodeURIComponent(trackingNumber.trim())}`
     }
   }
 
+  if (minimal) {
+    return (
+      <form onSubmit={handleSubmit} className="flex gap-2">
+        <Input
+          type="text"
+          placeholder="Enter tracking number"
+          value={trackingNumber}
+          onChange={(e) => setTrackingNumber(e.target.value)}
+          className="bg-white/20 border-white/30 text-white placeholder:text-white/70"
+        />
+        <Button 
+          type="submit" 
+          size="sm"
+          className="bg-red-600 hover:bg-red-700 text-white"
+        >
+          <Search className="h-4 w-4" />
+        </Button>
+      </form>
+    )
+  }
+
   return (
-    <form onSubmit={handleSubmit} className={cn("flex gap-2", className)}>
-      <Input
-        placeholder="Enter tracking number"
-        value={trackingNumber}
-        onChange={(e) => setTrackingNumber(e.target.value)}
-        className={cn(minimal && "bg-white/20 border-white/30 text-white placeholder:text-white/70")}
-        required
-      />
-      <Button type="submit" className={cn(!minimal && "bg-red-600 hover:bg-red-700")}>
-        <Search className="h-4 w-4" />
-      </Button>
-    </form>
+    <div className="bg-white rounded-lg shadow-lg p-6 max-w-md">
+      <h3 className="text-lg font-semibold mb-4">Track Your Shipment</h3>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <Input
+            type="text"
+            placeholder="Enter your tracking number"
+            value={trackingNumber}
+            onChange={(e) => setTrackingNumber(e.target.value)}
+            required
+          />
+        </div>
+        <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
+          <Search className="mr-2 h-4 w-4" />
+          Track Package
+        </Button>
+      </form>
+    </div>
   )
 }

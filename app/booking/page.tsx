@@ -1,882 +1,394 @@
 "use client"
 
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
-import { ArrowRight, CheckCircle } from "lucide-react"
-
-type AddressField = "name" | "phone" | "address" | "city" | "state" | "pincode" | "email" | "date"
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-}
+import { useState } from 'react'
+import { Package, MapPin, User, Calendar, Phone, Mail } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function BookingPage() {
-  const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [submitLoading, setSubmitLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
-
-  const [step, setStep] = useState(1)
-  const [bookingComplete, setBookingComplete] = useState(false)
-  const [bookingReference, setBookingReference] = useState("")
-
   const [formData, setFormData] = useState({
-    serviceType: "express",
-    packageType: "parcel",
-    weight: "",
-    value: "",
-    dimensions: { length: "", width: "", height: "" },
-    description: "",
-    pickup: {
-      name: "",
-      phone: "",
-      address: "",
-      city: "",
-      state: "",
-      pincode: "",
-      email: "",
-      date: "",
-    },
-    delivery: {
-      name: "",
-      phone: "",
-      address: "",
-      city: "",
-      state: "",
-      pincode: "",
-      email: "",
-      date: "",
-    },
+    // Sender Information
+    senderName: '',
+    senderPhone: '',
+    senderEmail: '',
+    senderAddress: '',
+    senderCity: '',
+    senderState: '',
+    senderPincode: '',
+    
+    // Receiver Information
+    receiverName: '',
+    receiverPhone: '',
+    receiverEmail: '',
+    receiverAddress: '',
+    receiverCity: '',
+    receiverState: '',
+    receiverPincode: '',
+    
+    // Package Information
+    serviceType: 'standard',
+    packageType: 'document',
+    weight: '',
+    length: '',
+    width: '',
+    height: '',
+    declaredValue: '',
+    description: '',
+    
+    // Pickup/Delivery
+    pickupDate: '',
+    deliveryType: 'standard'
   })
 
-  // Simple authentication check without API call
-  useEffect(() => {
-    const checkAuth = () => {
-      try {
-        // Check for stored auth token from admin auth or user auth
-        const token = localStorage.getItem('adminToken') || 
-                      localStorage.getItem('authToken') || 
-                      sessionStorage.getItem('authToken') ||
-                      localStorage.getItem('token') ||
-                      sessionStorage.getItem('token')
-        
-        // Check for user data
-        const userData = localStorage.getItem('userData') || sessionStorage.getItem('userData')
-        
-        if (!token && !userData) {
-          // No authentication found, redirect to login
-          router.push('/login?redirect=/booking')
-          return
-        }
+  const [loading, setLoading] = useState(false)
 
-        // Try to get user info from localStorage
-        if (userData) {
-          try {
-            const user = JSON.parse(userData)
-            setUser(user)
-            
-            // Pre-fill sender details if available
-            setFormData(prev => ({
-              ...prev,
-              pickup: {
-                ...prev.pickup,
-                name: user.name || '',
-                phone: user.phone || '',
-                email: user.email || ''
-              }
-            }))
-          } catch (e) {
-            console.error('Error parsing user data:', e)
-            // If userData is corrupted, check if we have a token
-            if (token) {
-              // Set a basic user object if we have token but corrupted userData
-              const basicUser = {
-                id: 'user_' + Date.now(),
-                name: 'User',
-                email: 'user@example.com'
-              }
-              setUser(basicUser)
-              localStorage.setItem('userData', JSON.stringify(basicUser))
-            } else {
-              router.push('/login?redirect=/booking')
-              return
-            }
-          }
-        } else if (token) {
-          // We have token but no userData, create basic user
-          const basicUser = {
-            id: 'user_' + Date.now(),
-            name: 'User',
-            email: 'user@example.com'
-          }
-          setUser(basicUser)
-          localStorage.setItem('userData', JSON.stringify(basicUser))
-        }
-
-      } catch (error) {
-        console.error('Auth check failed:', error)
-        router.push('/login?redirect=/booking')
-        return
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    checkAuth()
-  }, [router])
-
-  const handleAddressChange = (
-    section: "pickup" | "delivery",
-    field: AddressField,
-    value: string
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({
       ...formData,
-      [section]: {
-        ...formData[section],
-        [field]: value,
-      },
+      [e.target.name]: e.target.value
     })
-  }
-
-  const validateStep = (currentStep: number): boolean => {
-    switch (currentStep) {
-      case 1:
-        if (!formData.weight.trim()) {
-          setError("Weight is required")
-          return false
-        }
-        if (!formData.description.trim()) {
-          setError("Package description is required")
-          return false
-        }
-        break
-      case 2:
-        if (!formData.pickup.name.trim() || !formData.pickup.phone.trim() || !formData.pickup.address.trim()) {
-          setError("Please fill all pickup details")
-          return false
-        }
-        if (!formData.delivery.name.trim() || !formData.delivery.phone.trim() || !formData.delivery.address.trim()) {
-          setError("Please fill all delivery details")
-          return false
-        }
-        break
-    }
-    return true
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
+    setLoading(true)
     
-    if (step < 3) {
-      if (validateStep(step)) {
-        setStep(step + 1)
-      }
-    } else {
-      // Final submission
-      setSubmitLoading(true)
-      try {
-        const token = localStorage.getItem('authToken') || 
-                     sessionStorage.getItem('authToken') ||
-                     localStorage.getItem('token') ||
-                     sessionStorage.getItem('token')
-
-        // Call MongoDB API to save booking
-        const response = await fetch('/api/bookings', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            ...formData,
-            userId: user?.id,
-            createdAt: new Date().toISOString(),
-            status: 'pending'
-          })
-        })
-
-        const result = await response.json()
-
-        if (response.ok && result.success) {
-          setBookingReference(result.bookingId || result.awb || 'BWB' + Date.now().toString().slice(-8))
-          setBookingComplete(true)
-          setSuccess("Booking created successfully!")
-        } else {
-          // Fallback to localStorage if API fails
-          const bookingRef = 'BWB' + Date.now().toString().slice(-8)
-          setBookingReference(bookingRef)
-          setBookingComplete(true)
-          setSuccess("Booking created successfully!")
-          
-          // Save booking to localStorage as backup
-          const bookings = JSON.parse(localStorage.getItem('userBookings') || '[]')
-          bookings.push({
-            id: bookingRef,
-            ...formData,
-            userId: user?.id,
-            createdAt: new Date().toISOString(),
-            status: 'pending'
-          })
-          localStorage.setItem('userBookings', JSON.stringify(bookings))
-        }
-
-      } catch (error) {
-        console.error('Booking error:', error)
-        // Fallback to localStorage if API call fails
-        const bookingRef = 'BWB' + Date.now().toString().slice(-8)
-        setBookingReference(bookingRef)
-        setBookingComplete(true)
-        setSuccess("Booking created successfully!")
-        
-        // Save booking to localStorage as backup
-        const bookings = JSON.parse(localStorage.getItem('userBookings') || '[]')
-        bookings.push({
-          id: bookingRef,
-          ...formData,
-          userId: user?.id,
-          createdAt: new Date().toISOString(),
-          status: 'pending'
-        })
-        localStorage.setItem('userBookings', JSON.stringify(bookings))
-      } finally {
-        setSubmitLoading(false)
-      }
-    }
-  }
-
-  // Simple shipping cost calculator
-  const calculateShippingCost = (bookingData: any): number => {
-    // Example logic: base + per kg + service type multiplier
-    const base = 100;
-    const weight = parseFloat(bookingData.weight || bookingData.formData?.weight || "1");
-    let multiplier = 1;
-    switch (bookingData.serviceType || bookingData.formData?.serviceType) {
-      case "express":
-        multiplier = 1.5;
-        break;
-      case "standard":
-        multiplier = 1.2;
-        break;
-      case "economy":
-        multiplier = 1;
-        break;
-      default:
-        multiplier = 1;
-    }
-    return Math.round((base + weight * 50) * multiplier);
-  };
-
-  const initiatePayment = async (bookingData: any) => {
     try {
-      const response = await fetch('/api/payment/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: calculateShippingCost(bookingData),
-          bookingId: bookingData.awb
-        })
-      })
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      alert('Booking request submitted successfully! We will contact you shortly with the AWB number.')
       
-      const { paymentUrl } = await response.json()
-      window.location.href = paymentUrl
+      // Reset form
+      setFormData({
+        senderName: '', senderPhone: '', senderEmail: '', senderAddress: '', senderCity: '', senderState: '', senderPincode: '',
+        receiverName: '', receiverPhone: '', receiverEmail: '', receiverAddress: '', receiverCity: '', receiverState: '', receiverPincode: '',
+        serviceType: 'standard', packageType: 'document', weight: '', length: '', width: '', height: '', declaredValue: '', description: '',
+        pickupDate: '', deliveryType: 'standard'
+      })
     } catch (error) {
-      console.error('Payment initialization failed:', error)
+      alert('Error submitting booking. Please try again.')
+    } finally {
+      setLoading(false)
     }
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem('authToken')
-    sessionStorage.removeItem('authToken')
-    localStorage.removeItem('token')
-    sessionStorage.removeItem('token')
-    localStorage.removeItem('userData')
-    sessionStorage.removeItem('userData')
-    router.push('/login')
-  }
-
-  const resetForm = () => {
-    setStep(1)
-    setBookingComplete(false)
-    setBookingReference("")
-    setError("")
-    setSuccess("")
-    setFormData({
-      serviceType: "express",
-      packageType: "parcel",
-      weight: "",
-      value: "",
-      dimensions: { length: "", width: "", height: "" },
-      description: "",
-      pickup: {
-        name: user?.name || "",
-        phone: user?.phone || "",
-        address: "",
-        city: "",
-        state: "",
-        pincode: "",
-        email: user?.email || "",
-        date: "",
-      },
-      delivery: {
-        name: "",
-        phone: "",
-        address: "",
-        city: "",
-        state: "",
-        pincode: "",
-        email: "",
-        date: "",
-      },
-    })
-  }
-
-  // Show loading screen while checking authentication
-  if (loading || status === "loading") {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-red-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (status === "unauthenticated") {
-    router.push('/login?redirect=/booking')
-    return null
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-4xl mx-auto px-4">
-        {/* Header with user info */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">E-Booking</h1>
-              <p className="text-gray-600 mt-1">Welcome back, {user?.name}! Book your shipment online in just a few easy steps</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500">{user?.email}</span>
-              <button
-                onClick={handleLogout}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Book Your Shipment</h1>
+          <p className="text-gray-600 text-lg">Complete the form below to schedule your pickup and delivery</p>
         </div>
 
-        {/* Success Message */}
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center">
-            <CheckCircle className="w-5 h-5 mr-3 flex-shrink-0" />
-            <span>{success}</span>
-          </div>
-        )}
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center">
-            <svg className="w-5 h-5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            <span>{error}</span>
-          </div>
-        )}
-
-        {!bookingComplete ? (
-          <>
-            {/* Progress Steps */}
-            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-              <div className="flex items-center justify-between relative">
-                <div className="absolute left-0 right-0 top-1/2 h-1 bg-gray-200 -z-10"></div>
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className={`w-12 h-12 rounded-full flex items-center justify-center font-semibold ${
-                      i <= step ? "bg-red-600 text-white" : "bg-gray-200 text-gray-600"
-                    }`}
-                  >
-                    {i}
-                  </div>
-                ))}
+        <Card className="max-w-6xl mx-auto">
+          <CardHeader className="bg-blue-600 text-white">
+            <CardTitle className="flex items-center text-2xl">
+              <Package className="mr-3 h-6 w-6" />
+              Shipment Booking Form
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-8">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              
+              {/* Service Type Selection */}
+              <div className="bg-blue-50 p-6 rounded-lg">
+                <h3 className="text-lg font-semibold mb-4 text-blue-800">Service Type</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-blue-100">
+                    <input
+                      type="radio"
+                      name="serviceType"
+                      value="express"
+                      checked={formData.serviceType === 'express'}
+                      onChange={handleInputChange}
+                      className="mr-3"
+                    />
+                    <div>
+                      <div className="font-semibold">Express Delivery</div>
+                      <div className="text-sm text-gray-600">1-2 Business Days</div>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-blue-100">
+                    <input
+                      type="radio"
+                      name="serviceType"
+                      value="standard"
+                      checked={formData.serviceType === 'standard'}
+                      onChange={handleInputChange}
+                      className="mr-3"
+                    />
+                    <div>
+                      <div className="font-semibold">Standard Delivery</div>
+                      <div className="text-sm text-gray-600">3-5 Business Days</div>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-blue-100">
+                    <input
+                      type="radio"
+                      name="serviceType"
+                      value="economy"
+                      checked={formData.serviceType === 'economy'}
+                      onChange={handleInputChange}
+                      className="mr-3"
+                    />
+                    <div>
+                      <div className="font-semibold">Economy Delivery</div>
+                      <div className="text-sm text-gray-600">5-7 Business Days</div>
+                    </div>
+                  </label>
+                </div>
               </div>
-              <div className="flex justify-between mt-3 text-sm">
-                <span className={step >= 1 ? "text-red-600 font-medium" : "text-gray-600"}>Shipment Details</span>
-                <span className={step >= 2 ? "text-red-600 font-medium" : "text-gray-600"}>Addresses</span>
-                <span className={step >= 3 ? "text-red-600 font-medium" : "text-gray-600"}>Confirmation</span>
+
+              {/* Sender Information */}
+              <div className="bg-green-50 p-6 rounded-lg">
+                <h3 className="text-lg font-semibold mb-4 flex items-center text-green-800">
+                  <User className="mr-2 h-5 w-5" />
+                  Sender Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <Input
+                    name="senderName"
+                    placeholder="Full Name *"
+                    value={formData.senderName}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <Input
+                    name="senderPhone"
+                    placeholder="Phone Number *"
+                    value={formData.senderPhone}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <Input
+                    name="senderEmail"
+                    type="email"
+                    placeholder="Email Address"
+                    value={formData.senderEmail}
+                    onChange={handleInputChange}
+                  />
+                  <div className="md:col-span-2 lg:col-span-3">
+                    <Input
+                      name="senderAddress"
+                      placeholder="Complete Address *"
+                      value={formData.senderAddress}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  <Input
+                    name="senderCity"
+                    placeholder="City *"
+                    value={formData.senderCity}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <Input
+                    name="senderState"
+                    placeholder="State *"
+                    value={formData.senderState}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <Input
+                    name="senderPincode"
+                    placeholder="Pincode *"
+                    value={formData.senderPincode}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
               </div>
-            </div>
 
-            <form onSubmit={handleSubmit}>
-              {step === 1 && (
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Shipment Details</h2>
-                  <p className="text-gray-600 mb-6">Provide package details and specifications</p>
-                  
-                  <div className="space-y-6">
-                    <div>
-                      <label htmlFor="serviceType" className="text-base font-medium block mb-2">Service Type</label>
-                      <select
-                        id="serviceType"
-                        value={formData.serviceType}
-                        onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                        title="Select service type for your shipment"
-                      >
-                        <option value="express">Express (1–2 days)</option>
-                        <option value="standard">Standard (3–5 days)</option>
-                        <option value="economy">Economy (5–7 days)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <fieldset>
-                        <legend className="text-base font-medium block mb-2">Package Type</legend>
-                        <div className="flex gap-6 mt-2">
-                          {['document', 'parcel', 'heavy'].map((type) => (
-                            <label key={type} className="flex items-center space-x-2 cursor-pointer">
-                              <input
-                                type="radio"
-                                value={type}
-                                checked={formData.packageType === type}
-                                onChange={(e) => setFormData({ ...formData, packageType: e.target.value })}
-                                className="text-red-600 focus:ring-red-500"
-                              />
-                              <span className="capitalize">{type === 'heavy' ? 'Heavy Goods' : type}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </fieldset>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label htmlFor="weight" className="text-base font-medium block mb-2">Weight (kg) *</label>
-                        <input
-                          id="weight"
-                          type="number"
-                          step="0.1"
-                          placeholder="Enter weight"
-                          value={formData.weight}
-                          onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="value" className="text-base font-medium block mb-2">Declared Value (₹)</label>
-                        <input
-                          id="value"
-                          type="number"
-                          placeholder="Enter value"
-                          value={formData.value}
-                          onChange={(e) => setFormData({ ...formData, value: e.target.value })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-base font-medium block mb-2">Dimensions (cm)</label>
-                      <div className="grid grid-cols-3 gap-4">
-                        <div>
-                          <label htmlFor="length" className="sr-only">Length</label>
-                          <input
-                            id="length"
-                            placeholder="Length"
-                            value={formData.dimensions.length}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                dimensions: { ...formData.dimensions, length: e.target.value },
-                              })
-                            }
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                          />
-                        </div>
-                        <div>
-                          <label htmlFor="width" className="sr-only">Width</label>
-                          <input
-                            id="width"
-                            placeholder="Width"
-                            value={formData.dimensions.width}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                dimensions: { ...formData.dimensions, width: e.target.value },
-                              })
-                            }
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                          />
-                        </div>
-                        <div>
-                          <label htmlFor="height" className="sr-only">Height</label>
-                          <input
-                            id="height"
-                            placeholder="Height"
-                            value={formData.dimensions.height}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                dimensions: { ...formData.dimensions, height: e.target.value },
-                              })
-                            }
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label htmlFor="description" className="text-base font-medium block mb-2">Package Description *</label>
-                      <textarea
-                        id="description"
-                        placeholder="Describe the contents of your package"
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                        rows={3}
-                        required
-                      />
-                    </div>
+              {/* Receiver Information */}
+              <div className="bg-purple-50 p-6 rounded-lg">
+                <h3 className="text-lg font-semibold mb-4 flex items-center text-purple-800">
+                  <MapPin className="mr-2 h-5 w-5" />
+                  Receiver Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <Input
+                    name="receiverName"
+                    placeholder="Full Name *"
+                    value={formData.receiverName}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <Input
+                    name="receiverPhone"
+                    placeholder="Phone Number *"
+                    value={formData.receiverPhone}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <Input
+                    name="receiverEmail"
+                    type="email"
+                    placeholder="Email Address"
+                    value={formData.receiverEmail}
+                    onChange={handleInputChange}
+                  />
+                  <div className="md:col-span-2 lg:col-span-3">
+                    <Input
+                      name="receiverAddress"
+                      placeholder="Complete Address *"
+                      value={formData.receiverAddress}
+                      onChange={handleInputChange}
+                      required
+                    />
                   </div>
-                  
-                  <div className="flex justify-end mt-6">
-                    <button
-                      type="submit"
-                      className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors flex items-center"
-                    >
-                      Next <ArrowRight className="ml-2 h-4 w-4" />
-                    </button>
-                  </div>
+                  <Input
+                    name="receiverCity"
+                    placeholder="City *"
+                    value={formData.receiverCity}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <Input
+                    name="receiverState"
+                    placeholder="State *"
+                    value={formData.receiverState}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <Input
+                    name="receiverPincode"
+                    placeholder="Pincode *"
+                    value={formData.receiverPincode}
+                    onChange={handleInputChange}
+                    required
+                  />
                 </div>
-              )}
+              </div>
 
-              {step === 2 && (
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Pickup & Delivery</h2>
-                  <p className="text-gray-600 mb-6">Enter pickup and delivery address details</p>
-                  
-                  <div className="space-y-8">
-                    {/* Pickup Address */}
-                    <fieldset>
-                      <legend className="text-lg font-medium text-green-700 mb-4">Pickup Address</legend>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label htmlFor="pickup-name" className="block mb-2">Full Name *</label>
-                            <input
-                              id="pickup-name"
-                              value={formData.pickup.name}
-                              onChange={(e) => handleAddressChange("pickup", "name", e.target.value)}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label htmlFor="pickup-phone" className="block mb-2">Phone Number *</label>
-                            <input
-                              id="pickup-phone"
-                              type="tel"
-                              value={formData.pickup.phone}
-                              onChange={(e) => handleAddressChange("pickup", "phone", e.target.value)}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                              required
-                            />
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <label htmlFor="pickup-email" className="block mb-2">Email Address</label>
-                          <input
-                            id="pickup-email"
-                            type="email"
-                            value={formData.pickup.email}
-                            onChange={(e) => handleAddressChange("pickup", "email", e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label htmlFor="pickup-address" className="block mb-2">Complete Address *</label>
-                          <textarea
-                            id="pickup-address"
-                            value={formData.pickup.address}
-                            onChange={(e) => handleAddressChange("pickup", "address", e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                            rows={2}
-                            required
-                          />
-                        </div>
-                        
-                        <div className="grid grid-cols-3 gap-4">
-                          <div>
-                            <label htmlFor="pickup-city" className="block mb-2">City *</label>
-                            <input
-                              id="pickup-city"
-                              value={formData.pickup.city}
-                              onChange={(e) => handleAddressChange("pickup", "city", e.target.value)}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label htmlFor="pickup-state" className="block mb-2">State *</label>
-                            <input
-                              id="pickup-state"
-                              value={formData.pickup.state}
-                              onChange={(e) => handleAddressChange("pickup", "state", e.target.value)}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label htmlFor="pickup-pincode" className="block mb-2">Pincode *</label>
-                            <input
-                              id="pickup-pincode"
-                              value={formData.pickup.pincode}
-                              onChange={(e) => handleAddressChange("pickup", "pincode", e.target.value)}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                              required
-                            />
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <label htmlFor="pickup-date" className="block mb-2">Preferred Pickup Date</label>
-                          <input
-                            id="pickup-date"
-                            type="date"
-                            value={formData.pickup.date}
-                            onChange={(e) => handleAddressChange("pickup", "date", e.target.value)}
-                            min={new Date().toISOString().split('T')[0]}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                          />
-                        </div>
-                      </div>
-                    </fieldset>
-
-                    {/* Delivery Address */}
-                    <fieldset>
-                      <legend className="text-lg font-medium text-blue-700 mb-4">Delivery Address</legend>
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label htmlFor="delivery-name" className="block mb-2">Full Name *</label>
-                            <input
-                              id="delivery-name"
-                              value={formData.delivery.name}
-                              onChange={(e) => handleAddressChange("delivery", "name", e.target.value)}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label htmlFor="delivery-phone" className="block mb-2">Phone Number *</label>
-                            <input
-                              id="delivery-phone"
-                              type="tel"
-                              value={formData.delivery.phone}
-                              onChange={(e) => handleAddressChange("delivery", "phone", e.target.value)}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                              required
-                            />
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <label htmlFor="delivery-email" className="block mb-2">Email Address</label>
-                          <input
-                            id="delivery-email"
-                            type="email"
-                            value={formData.delivery.email}
-                            onChange={(e) => handleAddressChange("delivery", "email", e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label htmlFor="delivery-address" className="block mb-2">Complete Address *</label>
-                          <textarea
-                            id="delivery-address"
-                            value={formData.delivery.address}
-                            onChange={(e) => handleAddressChange("delivery", "address", e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                            rows={2}
-                            required
-                          />
-                        </div>
-                        
-                        <div className="grid grid-cols-3 gap-4">
-                          <div>
-                            <label htmlFor="delivery-city" className="block mb-2">City *</label>
-                            <input
-                              id="delivery-city"
-                              value={formData.delivery.city}
-                              onChange={(e) => handleAddressChange("delivery", "city", e.target.value)}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label htmlFor="delivery-state" className="block mb-2">State *</label>
-                            <input
-                              id="delivery-state"
-                              value={formData.delivery.state}
-                              onChange={(e) => handleAddressChange("delivery", "state", e.target.value)}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label htmlFor="delivery-pincode" className="block mb-2">Pincode *</label>
-                            <input
-                              id="delivery-pincode"
-                              value={formData.delivery.pincode}
-                              onChange={(e) => handleAddressChange("delivery", "pincode", e.target.value)}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                              required
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </fieldset>
+              {/* Package Information */}
+              <div className="bg-orange-50 p-6 rounded-lg">
+                <h3 className="text-lg font-semibold mb-4 flex items-center text-orange-800">
+                  <Package className="mr-2 h-5 w-5" />
+                  Package Information
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label htmlFor="packageType" className="block text-sm font-medium mb-2">Package Type *</label>
+                    <select
+                      id="packageType"
+                      name="packageType"
+                      value={formData.packageType}
+                      onChange={handleInputChange}
+                      required
+                      aria-label="Select package type"
+                      title="Choose the type of package you want to send"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="document">Document</option>
+                      <option value="parcel">Parcel</option>
+                      <option value="fragile">Fragile Item</option>
+                      <option value="electronics">Electronics</option>
+                      <option value="clothing">Clothing</option>
+                      <option value="food">Food Items</option>
+                      <option value="other">Other</option>
+                    </select>
                   </div>
                   
-                  <div className="flex justify-between mt-6">
-                    <button
-                      type="button"
-                      onClick={() => setStep(1)}
-                      className="border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold px-6 py-2 rounded-lg transition-colors"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="submit"
-                      className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors flex items-center"
-                    >
-                      Next <ArrowRight className="ml-2 h-4 w-4" />
-                    </button>
-                  </div>
+                  <Input
+                    name="weight"
+                    type="number"
+                    step="0.1"
+                    placeholder="Weight (kg) *"
+                    value={formData.weight}
+                    onChange={handleInputChange}
+                    required
+                  />
                 </div>
-              )}
 
-              {step === 3 && (
-                <div className="bg-white rounded-lg shadow-md p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Booking Confirmation</h2>
-                  <p className="text-gray-600 mb-6">Review your shipment details before confirming</p>
-                  
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-2">Package Details</h4>
-                        <div className="space-y-1 text-sm">
-                          <p><strong>Service:</strong> {formData.serviceType}</p>
-                          <p><strong>Package Type:</strong> {formData.packageType}</p>
-                          <p><strong>Weight:</strong> {formData.weight} kg</p>
-                          <p><strong>Value:</strong> ₹{formData.value}</p>
-                          <p><strong>Dimensions:</strong> {formData.dimensions.length} × {formData.dimensions.width} × {formData.dimensions.height} cm</p>
-                          <p><strong>Description:</strong> {formData.description}</p>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-2">Addresses</h4>
-                        <div className="space-y-3 text-sm">
-                          <div>
-                            <p className="font-medium text-green-700">Pickup:</p>
-                            <p>{formData.pickup.name}</p>
-                            <p>{formData.pickup.address}</p>
-                            <p>{formData.pickup.city}, {formData.pickup.state} - {formData.pickup.pincode}</p>
-                            <p>Phone: {formData.pickup.phone}</p>
-                            {formData.pickup.date && <p>Date: {formData.pickup.date}</p>}
-                          </div>
-                          
-                          <div>
-                            <p className="font-medium text-blue-700">Delivery:</p>
-                            <p>{formData.delivery.name}</p>
-                            <p>{formData.delivery.address}</p>
-                            <p>{formData.delivery.city}, {formData.delivery.state} - {formData.delivery.pincode}</p>
-                            <p>Phone: {formData.delivery.phone}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-between mt-6">
-                    <button
-                      type="button"
-                      onClick={() => setStep(2)}
-                      className="border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold px-6 py-2 rounded-lg transition-colors"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitLoading}
-                      className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold px-6 py-2 rounded-lg transition-colors flex items-center"
-                    >
-                      {submitLoading ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                          Booking...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Confirm & Book
-                        </>
-                      )}
-                    </button>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <Input
+                    name="length"
+                    type="number"
+                    placeholder="Length (cm)"
+                    value={formData.length}
+                    onChange={handleInputChange}
+                  />
+                  <Input
+                    name="width"
+                    type="number"
+                    placeholder="Width (cm)"
+                    value={formData.width}
+                    onChange={handleInputChange}
+                  />
+                  <Input
+                    name="height"
+                    type="number"
+                    placeholder="Height (cm)"
+                    value={formData.height}
+                    onChange={handleInputChange}
+                  />
                 </div>
-              )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    name="declaredValue"
+                    type="number"
+                    placeholder="Declared Value (₹)"
+                    value={formData.declaredValue}
+                    onChange={handleInputChange}
+                  />
+                  <Input
+                    name="pickupDate"
+                    type="date"
+                    placeholder="Preferred Pickup Date"
+                    value={formData.pickupDate}
+                    onChange={handleInputChange}
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+
+                <div className="mt-4">
+                  <textarea
+                    name="description"
+                    placeholder="Package Description *"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    required
+                    rows={3}
+                    aria-label="Package description"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="text-center pt-6 border-t">
+                <Button 
+                  type="submit" 
+                  disabled={loading}
+                  className="bg-red-600 hover:bg-red-700 text-white px-12 py-3 text-lg font-semibold"
+                  size="lg"
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Calendar className="mr-2 h-5 w-5" />
+                      Submit Booking Request
+                    </>
+                  )}
+                </Button>
+                
+                <p className="text-sm text-gray-600 mt-4">
+                  * Required fields. You will receive an AWB number and tracking details via SMS/Email.
+                </p>
+              </div>
             </form>
-          </>
-        ) : (
-          <div className="bg-white rounded-lg shadow-md p-6 text-center">
-            <CheckCircle className="text-green-500 w-16 h-16 mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Booking Confirmed!</h2>
-            <p className="text-gray-600 mb-4">Your shipment has been successfully booked</p>
-            
-            <div className="bg-gray-50 rounded-lg p-4 mb-4">
-              <p className="text-sm text-gray-600 mb-1">Your Booking Reference Number:</p>
-              <p className="font-mono font-bold text-2xl text-gray-900">{bookingReference}</p>
-            </div>
-            
-            <p className="text-sm text-gray-600 mb-4">
-              Please save this reference number for tracking your shipment. 
-              You will receive a confirmation email shortly.
-            </p>
-            
-            <div className="flex justify-center space-x-4">
-              <button 
-                onClick={resetForm}
-                className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors"
-              >
-                Book Another Shipment
-              </button>
-              <button 
-                onClick={() => router.push(`/track`)}
-                className="border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold px-6 py-2 rounded-lg transition-colors"
-              >
-                Track This Shipment
-              </button>
-            </div>
-          </div>
-        )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

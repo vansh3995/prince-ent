@@ -6,13 +6,13 @@ type User = {
   id: string
   name: string
   email: string
-  role: string
+  role: 'admin' | 'user'
 }
 
 type AuthContextType = {
   user: User | null
   isLoading: boolean
-  login: (email: string, password: string) => Promise<{ success: boolean; message: string }>
+  login: (email: string, password: string, role?: 'admin' | 'user') => Promise<{ success: boolean; message: string }>
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; message: string }>
   logout: () => void
 }
@@ -24,35 +24,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-  if (typeof window !== "undefined") {
-    const savedUser = localStorage.getItem("user")
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser))
-      } catch (error) {
-        console.error("Failed to parse saved user", error)
-        localStorage.removeItem("user")
+    if (typeof window !== "undefined") {
+      const savedUser = localStorage.getItem("user")
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser))
+        } catch (error) {
+          console.error("Failed to parse saved user", error)
+          localStorage.removeItem("user")
+        }
       }
+      setIsLoading(false)
     }
-    setIsLoading(false)
-  }
-}, [])
+  }, [])
 
-
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, role?: 'admin' | 'user') => {
     try {
+      // Send email, password and role to API route
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, role }),
       })
 
       const data = await res.json()
 
       if (!res.ok) {
-        return { success: false, message: data.msg || "Login failed" }
+        return { success: false, message: data.message || "Login failed" }
       }
 
       localStorage.setItem("token", data.token)

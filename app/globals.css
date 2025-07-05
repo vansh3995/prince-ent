@@ -1,6 +1,4 @@
-/* Tailwind CSS directives */
-/* Remove @tailwind directives if not using Tailwind CSS processor */
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -57,64 +55,5 @@
   }
   body {
     @apply bg-background text-foreground;
-  }
-}
-
-/* Custom components */
-@layer components {
-  .btn-primary {
-    background-color: #3b82f6; /* Tailwind bg-blue-500 */
-    color: #fff; /* Tailwind text-white */
-    font-weight: bold; /* Tailwind font-bold */
-    padding-top: 0.5rem; /* Tailwind py-2 */
-    padding-bottom: 0.5rem;
-    padding-left: 1rem; /* Tailwind px-4 */
-    padding-right: 1rem;
-    border-radius: 0.25rem; /* Tailwind rounded */
-    transition: background-color 0.2s;
-  }
-
-  .btn-primary:hover {
-    background-color: #1d4ed8; /* Tailwind hover:bg-blue-700 */
-  }
-  
-  .card {
-    background-color: #fff; /* Tailwind bg-white */
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); /* Tailwind shadow-md */
-    border-radius: 0.5rem; /* Tailwind rounded-lg */
-    padding: 1.5rem; /* Tailwind p-6 */
-  }
-  
-  /* Health Bar Components for Live Analytics */
-  .health-bar-container {
-    @apply w-32 bg-gray-200 rounded-full h-2 mr-3 relative overflow-hidden;
-  }
-  
-  .health-bar {
-    @apply h-full rounded-full transition-all duration-500 ease-out;
-  }
-  
-  .health-bar-green {
-    @apply bg-green-500;
-  }
-  
-  .health-bar-yellow {
-    @apply bg-yellow-500;
-  }
-  
-  .health-bar-red {
-    @apply bg-red-500;
-  }
-}
-
-/* Custom utilities */
-@layer utilities {
-  .text-balance {
-    text-align: justify; /* Fallback for unsupported browsers */
-    /* text-wrap: balance; Removed for compatibility */
-  }
-  
-  .scroll-smooth {
-    scroll-behavior: smooth;
   }
 }

@@ -1,87 +1,74 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 
 export async function POST(request: Request) {
   try {
-    const { username, password } = await request.json()
-
-    if (!username || !password) {
+    const { email, username, password } = await request.json()
+    
+    // Accept either email or username
+    const loginField = email || username
+    
+    if (!loginField || !password) {
       return NextResponse.json(
-        { success: false, message: 'Username and password are required' },
+        { message: 'Email/Username and password are required' },
         { status: 400 }
       )
     }
 
-    const { db } = await connectToDatabase()
-
-    // Find admin user
-    let admin = await db.collection('admins').findOne({ username })
-
-    // If no admin exists, create default admin
-    if (!admin) {
-      const hashedPassword = await bcrypt.hash('admin123', 10)
-      const defaultAdmin = {
-        username: 'admin',
-        email: 'admin@prince-enterprise.com',
-        password: hashedPassword,
-        role: 'admin',
-        createdAt: new Date()
-      }
-
-      const insertResult = await db.collection('admins').insertOne(defaultAdmin)
-      
-      if (username === 'admin') {
-        admin = await db.collection('admins').findOne({ _id: insertResult.insertedId })
-      }
-    }
+    const db = await connectToDatabase()
+    
+    // Search by email or username
+    const admin = await db.collection('admins').findOne({
+      $or: [
+        { email: loginField },
+        { username: loginField }
+      ]
+    })
 
     if (!admin) {
       return NextResponse.json(
-        { success: false, message: 'Invalid credentials' },
+        { message: 'Invalid credentials' },
         { status: 401 }
       )
     }
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, admin.password)
-
-    if (!isValidPassword) {
+    const isPasswordValid = await bcrypt.compare(password, admin.password)
+    
+    if (!isPasswordValid) {
       return NextResponse.json(
-        { success: false, message: 'Invalid credentials' },
+        { message: 'Invalid credentials' },
         { status: 401 }
       )
     }
 
-    // Generate JWT token
-    const secret = process.env.JWT_SECRET || 'fallback-secret-key'
     const token = jwt.sign(
-      {
-        id: admin._id,
-        username: admin.username,
+      { 
+        userId: admin._id,
         email: admin.email,
-        role: admin.role
+        role: admin.role 
       },
-      secret,
+      process.env.JWT_SECRET || 'fallback-secret',
       { expiresIn: '24h' }
     )
 
     return NextResponse.json({
       success: true,
-      token,
+      message: 'Login successful',
       user: {
         id: admin._id,
-        username: admin.username,
         email: admin.email,
+        username: admin.username,
         role: admin.role
-      }
+      },
+      token
     })
 
   } catch (error) {
-    console.error('Admin login error:', error)
+    console.error('Login error:', error)
     return NextResponse.json(
-      { success: false, message: 'Server error' },
+      { message: 'Internal server error' },
       { status: 500 }
     )
   }
