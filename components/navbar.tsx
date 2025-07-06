@@ -94,8 +94,8 @@ export default function Navbar() {
                 Services
               </Link>
               <Link 
-                href="/tracking" 
-                className={`${pathname === '/tracking' ? 'text-red-600' : 'text-gray-700'} hover:text-red-600 transition-colors`}
+                href="/track" 
+                className={`${pathname === '/track' ? 'text-red-600' : 'text-gray-700'} hover:text-red-600 transition-colors`}
               >
                 Track
               </Link>
@@ -170,10 +170,11 @@ export default function Navbar() {
 
             <div className="md:hidden flex items-center">
               <button
+                aria-expanded={isOpen}
                 onClick={() => setIsOpen(!isOpen)}
                 className="text-gray-700 hover:text-red-600 transition-colors"
-                aria-label={isOpen ? "Close menu" : "Open menu"}
-                title={isOpen ? "Close menu" : "Open menu"}
+                aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
+                type="button"
               >
                 {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
@@ -189,7 +190,7 @@ export default function Navbar() {
                 <Link href="/services" className="block px-3 py-2 text-gray-700 hover:text-red-600 transition-colors" onClick={() => setIsOpen(false)}>
                   Services
                 </Link>
-                <Link href="/tracking" className="block px-3 py-2 text-gray-700 hover:text-red-600 transition-colors" onClick={() => setIsOpen(false)}>
+                <Link href="/track" className="block px-3 py-2 text-gray-700 hover:text-red-600 transition-colors" onClick={() => setIsOpen(false)}>
                   Track
                 </Link>
                 <Link href="/booking" className="block px-3 py-2 text-gray-700 hover:text-red-600 transition-colors" onClick={() => setIsOpen(false)}>
@@ -273,16 +274,16 @@ function LoginModal({ isOpen, onClose, loginType }: { isOpen: boolean; onClose: 
 
     try {
       if (loginType === 'admin') {
-        await adminLogin(username, password)
+        await adminLogin(username || '', password || '')
         onClose()
         router.push('/admin/dashboard')
       } else {
-        const result = await login(email, password, loginType)
+        const result = await login(email || '', password || '', loginType)
         if (result.success) {
           onClose()
           router.push('/dashboard')
         } else {
-          setError(result.message)
+          setError(result.message || 'Login failed')
         }
       }
     } catch (error: any) {
@@ -304,8 +305,8 @@ function LoginModal({ isOpen, onClose, loginType }: { isOpen: boolean; onClose: 
           <button 
             onClick={onClose} 
             className="text-gray-500 hover:text-gray-700"
-            aria-label="Close login modal"
-            title="Close login modal"
+            aria-label="Close login dialog"
+            type="button"
           >
             <X className="h-5 w-5" />
           </button>
@@ -321,24 +322,22 @@ function LoginModal({ isOpen, onClose, loginType }: { isOpen: boolean; onClose: 
           {loginType === 'admin' ? (
             <>
               <div>
-                <label htmlFor="admin-username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
                 <input
-                  id="admin-username"
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => setUsername(e.target.value || '')}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="admin"
                 />
               </div>
               <div>
-                <label htmlFor="admin-password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <input
-                  id="admin-password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value || '')}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="admin123"
@@ -348,24 +347,22 @@ function LoginModal({ isOpen, onClose, loginType }: { isOpen: boolean; onClose: 
           ) : (
             <>
               <div>
-                <label htmlFor="user-email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input
-                  id="user-email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value || '')}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="user@example.com"
                 />
               </div>
               <div>
-                <label htmlFor="user-password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <input
-                  id="user-password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value || '')}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="Password"
@@ -425,13 +422,13 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
     setIsLoading(true)
 
     try {
-      const result = await register(name, email, password)
+      const result = await register(name || '', email || '', password || '')
       
       if (result.success) {
         onClose()
         router.push('/dashboard')
       } else {
-        setError(result.message)
+        setError(result.message || 'Registration failed')
       }
     } catch (error: any) {
       setError(error.message || 'Registration failed')
@@ -450,8 +447,8 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           <button 
             onClick={onClose} 
             className="text-gray-500 hover:text-gray-700"
-            aria-label="Close registration modal"
-            title="Close registration modal"
+            aria-label="Close registration dialog"
+            type="button"
           >
             <X className="h-5 w-5" />
           </button>
@@ -465,12 +462,11 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           )}
           
           <div>
-            <label htmlFor="register-name" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
             <input
-              id="register-name"
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value || '')}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="Enter your full name"
@@ -478,12 +474,11 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           </div>
 
           <div>
-            <label htmlFor="register-email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
-              id="register-email"
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value || '')}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="Enter your email address"
@@ -491,12 +486,11 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           </div>
 
           <div>
-            <label htmlFor="register-password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
             <input
-              id="register-password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value || '')}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="Create a password"
@@ -504,12 +498,11 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           </div>
 
           <div>
-            <label htmlFor="register-confirm-password" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
             <input
-              id="register-confirm-password"
               type="password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={(e) => setConfirmPassword(e.target.value || '')}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="Confirm your password"

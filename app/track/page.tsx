@@ -1,326 +1,246 @@
-"use client"
+﻿"use client"
 
-import { useState, useEffect } from "react"
-import { Search, Package, Truck, CheckCircle, Clock, MapPin } from 'lucide-react'
+import { useState } from 'react'
+import { Search, Package, MapPin, Clock, CheckCircle, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-
-interface TrackingEvent {
-  id: string
-  timestamp: string
-  status: string
-  location: string
-  description: string
-}
-
-interface Parcel {
-  awb: string
-  status: string
-  events?: TrackingEvent[]
-  senderName?: string
-  receiverName?: string
-  weight?: number
-  estimatedDelivery?: string
-}
-
-const statusOrder = [
-  "booked",
-  "picked-up",
-  "in-transit",
-  "out-for-delivery",
-  "delivered",
-  "exception",
-  "cancelled"
-]
-
-function getStatusIndex(status: string) {
-  return statusOrder.indexOf(status.toLowerCase())
-}
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default function TrackPage() {
-  const [awb, setAwb] = useState("")
-  const [parcel, setParcel] = useState<Parcel | null>(null)
-  const [error, setError] = useState("")
+  const [awbNumber, setAwbNumber] = useState('')
+  const [trackingData, setTrackingData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  // Check for tracking number in URL
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const number = urlParams.get('number')
-    if (number) {
-      setAwb(number.toUpperCase())
-      // Auto-fetch if URL has tracking number
-      fetchTrackingWithNumber(number.toUpperCase())
+  const handleTrack = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!awbNumber.trim()) {
+      setError('Please enter a valid AWB number')
+      return
     }
-  }, [])
 
-  const fetchTrackingWithNumber = async (trackingNumber: string) => {
     setLoading(true)
-    setError("")
-    setParcel(null)
+    setError('')
     
     try {
-      // Try API first
-      const res = await fetch(`/api/track/${trackingNumber}`)
-      if (res.ok) {
-        const data = await res.json()
-        setParcel(data.parcel)
-        setLoading(false)
-        return
+      const response = await fetch(`/api/track/${awbNumber}`)
+      const data = await response.json()
+      
+      if (response.ok) {
+        setTrackingData(data)
+      } else {
+        setError(data.message || 'Shipment not found')
+        setTrackingData(null)
       }
-      
-      // Fallback to mock data if API fails
-      setTimeout(() => {
-        const mockParcel: Parcel = {
-          awb: trackingNumber,
-          status: "in-transit",
-          senderName: "Prince Enterprises Mumbai",
-          receiverName: "Customer Delhi",
-          weight: 2.5,
-          estimatedDelivery: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-          events: [
-            {
-              id: "1",
-              timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-              status: "booked",
-              location: "Mumbai Hub",
-              description: "Package has been booked and is ready for pickup"
-            },
-            {
-              id: "2", 
-              timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-              status: "picked-up",
-              location: "Mumbai Hub",
-              description: "Package picked up from sender"
-            },
-            {
-              id: "3",
-              timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-              status: "in-transit",
-              location: "Pune Transit Hub",
-              description: "Package is in transit to destination"
-            }
-          ]
-        }
-        setParcel(mockParcel)
-        setLoading(false)
-      }, 1000)
-      
-    } catch (err) {
-      setError("Failed to fetch tracking info")
-      setLoading(false)
+    } catch (error) {
+      setError('Failed to track shipment. Please try again.')
+      setTrackingData(null)
+    }
+    
+    setLoading(false)
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'delivered':
+        return <CheckCircle className="h-5 w-5 text-green-600" />
+      case 'in-transit':
+      case 'in_transit':
+        return <Truck className="h-5 w-5 text-blue-600" />
+      case 'picked-up':
+      case 'picked_up':
+        return <Package className="h-5 w-5 text-yellow-600" />
+      default:
+        return <Clock className="h-5 w-5 text-gray-600" />
     }
   }
 
-  const fetchTracking = async () => {
-    if (!awb.trim()) return
-    await fetchTrackingWithNumber(awb.trim())
-  }
-
-  const currentStatusIndex = parcel ? getStatusIndex(parcel.status) : -1
-
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'delivered': return 'text-green-600'
-      case 'exception':
-      case 'cancelled': return 'text-red-600'
-      case 'out-for-delivery': return 'text-blue-600'
-      case 'in-transit': return 'text-yellow-600'
-      default: return 'text-gray-600'
+    switch (status?.toLowerCase()) {
+      case 'delivered':
+        return 'text-green-600 bg-green-50'
+      case 'in-transit':
+      case 'in_transit':
+        return 'text-blue-600 bg-blue-50'
+      case 'picked-up':
+      case 'picked_up':
+        return 'text-yellow-600 bg-yellow-50'
+      default:
+        return 'text-gray-600 bg-gray-50'
     }
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-center mb-8">Track Your Shipment</h1>
-      
-      {/* Search Form */}
-      <Card className="max-w-md mx-auto mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Package className="mr-2 h-5 w-5" />
-            Enter Tracking Number
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex space-x-2">
-            <Input
-              type="text"
-              placeholder="Enter AWB Number"
-              value={awb}
-              onChange={(e) => setAwb(e.target.value.toUpperCase())}
-              className="flex-grow"
-            />
-            <Button
-              onClick={fetchTracking}
-              disabled={!awb || loading}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {loading ? (
-                <Clock className="h-4 w-4 animate-spin" />
-              ) : (
-                <Search className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Error Message */}
-      {error && (
-        <div className="max-w-2xl mx-auto mb-8">
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
-            {error}
-          </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Track Your Shipment</h1>
+          <p className="text-gray-600">Enter your AWB number to track your package in real-time</p>
         </div>
-      )}
 
-      {/* Tracking Results */}
-      {parcel && (
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Package Info */}
+        {/* Tracking Form */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Search className="h-5 w-5" />
+              <span>Track Package</span>
+            </CardTitle>
+            <CardDescription>
+              Enter your Air Waybill (AWB) number to get real-time tracking information
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleTrack} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  AWB Number
+                </label>
+                <input
+                  type="text"
+                  value={awbNumber}
+                  onChange={(e) => setAwbNumber(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  placeholder="Enter your AWB number (e.g., AWB123456789)"
+                  required
+                />
+              </div>
+              
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+                  {error}
+                </div>
+              )}
+
+              <Button 
+                type="submit" 
+                disabled={loading}
+                className="w-full bg-red-600 hover:bg-red-700"
+              >
+                {loading ? 'Tracking...' : 'Track Package'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Tracking Results */}
+        {trackingData && (
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Truck className="mr-2 h-5 w-5" />
-                Tracking Results
+              <CardTitle className="flex items-center space-x-2">
+                <Package className="h-5 w-5" />
+                <span>Tracking Details</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-blue-50 rounded-lg">
-                <div>
-                  <p className="text-sm text-gray-600">AWB Number</p>
-                  <p className="font-semibold text-lg">{parcel.awb}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Status</p>
-                  <p className={`font-semibold text-lg capitalize ${getStatusColor(parcel.status)}`}>
-                    {parcel.status.replace(/-/g, ' ')}
-                  </p>
-                </div>
-                {parcel.weight && (
+              <div className="space-y-6">
+                {/* Package Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-gray-600">Weight</p>
-                    <p className="font-semibold">{parcel.weight} kg</p>
+                    <h3 className="text-sm font-medium text-gray-500">AWB Number</h3>
+                    <p className="text-lg font-semibold">{trackingData.awb}</p>
                   </div>
-                )}
-                {parcel.estimatedDelivery && (
                   <div>
-                    <p className="text-sm text-gray-600">Est. Delivery</p>
-                    <p className="font-semibold">
-                      {new Date(parcel.estimatedDelivery).toLocaleDateString()}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Sender/Receiver Info */}
-              {(parcel.senderName || parcel.receiverName) && (
-                <div className="flex items-center justify-center space-x-8 p-4 bg-gray-50 rounded-lg mt-4">
-                  {parcel.senderName && (
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600">From</p>
-                      <p className="font-semibold">{parcel.senderName}</p>
+                    <h3 className="text-sm font-medium text-gray-500">Current Status</h3>
+                    <div className="flex items-center space-x-2">
+                      {getStatusIcon(trackingData.status)}
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(trackingData.status)}`}>
+                        {trackingData.status?.replace('_', ' ').toUpperCase()}
+                      </span>
                     </div>
-                  )}
-                  <div className="flex items-center">
-                    <Truck className="h-6 w-6 text-blue-600" />
-                    <div className="w-16 h-1 bg-blue-600 mx-2"></div>
-                    <MapPin className="h-6 w-6 text-blue-600" />
                   </div>
-                  {parcel.receiverName && (
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600">To</p>
-                      <p className="font-semibold">{parcel.receiverName}</p>
-                    </div>
-                  )}
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">From</h3>
+                    <p className="text-lg">{trackingData.from || trackingData.origin}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-500">To</h3>
+                    <p className="text-lg">{trackingData.to || trackingData.destination}</p>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Progress Bar */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Shipment Progress</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center">
-                {statusOrder.slice(0, 5).map((status, index) => (
-                  <div key={status} className="flex flex-col items-center flex-1">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        index <= currentStatusIndex 
-                          ? "bg-red-600 text-white" 
-                          : "bg-gray-300 text-gray-500"
-                      }`}
-                    >
-                      {index <= currentStatusIndex ? (
-                        <CheckCircle className="w-5 h-5" />
-                      ) : (
-                        <div className="w-3 h-3 bg-current rounded-full" />
-                      )}
-                    </div>
-                    <p className="text-xs mt-2 text-center capitalize font-medium">
-                      {status.replace(/-/g, ' ')}
-                    </p>
-                    {index < 4 && (
-                      <div 
-                        className={`h-1 w-full mt-4 ${
-                          index < currentStatusIndex ? 'bg-red-600' : 'bg-gray-300'
-                        }`}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Timeline */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Tracking Timeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {parcel.events && parcel.events.length > 0 ? (
-                <div className="space-y-4">
-                  {parcel.events.map((event, index) => (
-                    <div key={event.id} className="flex items-start space-x-4">
-                      <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mt-1">
-                        <div className="w-3 h-3 bg-red-600 rounded-full" />
-                      </div>
-                      <div className="flex-1 pb-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium text-red-600 capitalize">
-                              {event.status.replace(/-/g, ' ')}
-                            </p>
-                            <p className="text-sm text-gray-600 flex items-center">
-                              <MapPin className="w-4 h-4 mr-1" />
-                              {event.location}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {new Date(event.timestamp).toLocaleString()}
-                            </p>
+                {/* Timeline */}
+                {trackingData.timeline && trackingData.timeline.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Tracking Timeline</h3>
+                    <div className="space-y-4">
+                      {trackingData.timeline.map((event: any, index: number) => (
+                        <div key={index} className="flex items-start space-x-3">
+                          <div className="flex-shrink-0">
+                            <div className="w-3 h-3 bg-red-600 rounded-full mt-2"></div>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <p className="font-medium">{event.status}</p>
+                              <p className="text-sm text-gray-500">{event.timestamp}</p>
+                            </div>
+                            {event.location && (
+                              <div className="flex items-center space-x-1 text-sm text-gray-600">
+                                <MapPin className="h-4 w-4" />
+                                <span>{event.location}</span>
+                              </div>
+                            )}
+                            {event.description && (
+                              <p className="text-sm text-gray-600 mt-1">{event.description}</p>
+                            )}
                           </div>
                         </div>
-                        <p className="text-gray-700 mt-1">{event.description}</p>
-                        {index < parcel.events!.length - 1 && (
-                          <div className="w-0.5 h-8 bg-gray-300 ml-4 mt-2"></div>
-                        )}
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Expected Delivery */}
+                {trackingData.expectedDelivery && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center space-x-2">
+                      <Clock className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="font-medium text-blue-900">Expected Delivery</p>
+                        <p className="text-blue-700">{trackingData.expectedDelivery}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-center py-8">No tracking events available.</p>
-              )}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
-        </div>
-      )}
+        )}
+
+        {/* Demo Section */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Try Demo Tracking</CardTitle>
+            <CardDescription>
+              Use these demo AWB numbers to see how tracking works
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <button
+                onClick={() => setAwbNumber('AWB123456789')}
+                className="p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <div className="font-medium">AWB123456789</div>
+                <div className="text-sm text-gray-600">Delivered</div>
+              </button>
+              <button
+                onClick={() => setAwbNumber('AWB987654321')}
+                className="p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <div className="font-medium">AWB987654321</div>
+                <div className="text-sm text-gray-600">In Transit</div>
+              </button>
+              <button
+                onClick={() => setAwbNumber('AWB555666777')}
+                className="p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <div className="font-medium">AWB555666777</div>
+                <div className="text-sm text-gray-600">Picked Up</div>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

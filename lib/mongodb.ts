@@ -1,25 +1,57 @@
-﻿import { MongoClient } from 'mongodb'
+﻿import { MongoClient, Db } from 'mongodb'
 
-const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/prince-ent'
-const options = {}
+let client: MongoClient | null = null
+let db: Db | null = null
 
-let client: MongoClient
-let clientPromise: Promise<MongoClient>
+export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
+  try {
+    if (client && db) {
+      return { client, db }
+    }
 
-if (process.env.NODE_ENV === 'development') {
-  if (!(global as any)._mongoClientPromise) {
-    client = new MongoClient(uri, options)
-    ;(global as any)._mongoClientPromise = client.connect()
+    const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/prince-enterprises'
+    
+    client = new MongoClient(uri)
+    await client.connect()
+    
+    db = client.db()
+    
+    console.log(' MongoDB connected successfully')
+    return { client, db }
+    
+  } catch (error) {
+    console.error(' MongoDB connection error:', error)
+    
+    // Reset connection objects on error
+    client = null
+    db = null
+    
+    // Re-throw the error so calling code can handle it
+    throw new Error(`Database connection failed: ${error}`)
   }
-  clientPromise = (global as any)._mongoClientPromise
-} else {
-  client = new MongoClient(uri, options)
-  clientPromise = client.connect()
 }
 
-export async function connectToDatabase() {
-  const client = await clientPromise
-  return client.db('prince-ent')
+export async function closeDatabaseConnection() {
+  try {
+    if (client) {
+      await client.close()
+      client = null
+      db = null
+      console.log(' MongoDB connection closed')
+    }
+  } catch (error) {
+    console.error('Error closing database connection:', error)
+  }
 }
 
-export default clientPromise
+// Health check function
+export async function checkDatabaseHealth(): Promise<boolean> {
+  try {
+    const { db } = await connectToDatabase()
+    await db.admin().ping()
+    return true
+  } catch (error) {
+    console.error('Database health check failed:', error)
+    return false
+  }
+}

@@ -1,254 +1,332 @@
-"use client"
+﻿"use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { MapPin, Phone, Mail, Clock, Send, CheckCircle } from "lucide-react"
+import { useState } from 'react'
+import { Phone, Mail, MapPin, Clock, Send, MessageSquare } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+import toast from 'react-hot-toast'
 
 export default function ContactPage() {
-  const [formSubmitted, setFormSubmitted] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    subject: '',
+    message: ''
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setFormSubmitted(true)
+    setIsSubmitting(true)
+
+    // Simulate form submission
+    setTimeout(() => {
+      toast.success('Message sent successfully! We will get back to you soon.')
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: ''
+      })
+      setIsSubmitting(false)
+    }, 1000)
   }
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    })
+  }
+
+  const contactInfo = [
+    {
+      icon: Phone,
+      title: "Phone",
+      details: ["+91-9876543210", "+91-9876543211"],
+      description: "Call us Monday to Saturday, 9 AM to 6 PM"
+    },
+    {
+      icon: Mail,
+      title: "Email",
+      details: ["info@princeenterprises.com", "support@princeenterprises.com"],
+      description: "We'll respond within 24 hours"
+    },
+    {
+      icon: MapPin,
+      title: "Address",
+      details: ["123 Business Center", "Mumbai, Maharashtra 400001"],
+      description: "Visit our office during business hours"
+    },
+    {
+      icon: Clock,
+      title: "Business Hours",
+      details: ["Monday - Saturday: 9:00 AM - 6:00 PM", "Sunday: Closed"],
+      description: "Emergency support available 24/7"
+    }
+  ]
+
+  const offices = [
+    {
+      city: "Mumbai",
+      address: "123 Business Center, Andheri East, Mumbai - 400069",
+      phone: "+91-9876543210",
+      email: "mumbai@princeenterprises.com"
+    },
+    {
+      city: "Delhi",
+      address: "456 Corporate Plaza, Connaught Place, New Delhi - 110001",
+      phone: "+91-9876543211",
+      email: "delhi@princeenterprises.com"
+    },
+    {
+      city: "Bangalore",
+      address: "789 Tech Park, Electronic City, Bangalore - 560100",
+      phone: "+91-9876543212",
+      email: "bangalore@princeenterprises.com"
+    },
+    {
+      city: "Chennai",
+      address: "321 Industrial Area, Guindy, Chennai - 600032",
+      phone: "+91-9876543213",
+      email: "chennai@princeenterprises.com"
+    }
+  ]
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-900 to-purple-900 text-white py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Contact Us</h1>
-            <p className="text-xl text-blue-100 mb-8">Get in touch with our team for inquiries, support, or feedback</p>
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Contact Us</h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Get in touch with our team for any queries, support, or business inquiries. 
+            We're here to help you with all your logistics needs.
+          </p>
+        </div>
+
+        {/* Contact Information Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+          {contactInfo.map((info, index) => {
+            const Icon = info.icon
+            return (
+              <Card key={index} className="text-center hover:shadow-lg transition-shadow">
+                <CardContent className="pt-6">
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Icon className="h-6 w-6 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{info.title}</h3>
+                  {info.details.map((detail, idx) => (
+                    <p key={idx} className="text-gray-600 font-medium">{detail}</p>
+                  ))}
+                  <p className="text-sm text-gray-500 mt-2">{info.description}</p>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* Contact Form */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <MessageSquare className="h-6 w-6 text-red-600" />
+                <span>Send us a Message</span>
+              </CardTitle>
+              <CardDescription>
+                Fill out the form below and we'll get back to you as soon as possible.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                      Full Name *
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      placeholder="Your full name"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      placeholder="your@email.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                      placeholder="+91-9876543210"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
+                      Subject *
+                    </label>
+                    <select
+                      id="subject"
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    >
+                      <option value="">Select a subject</option>
+                      <option value="general">General Inquiry</option>
+                      <option value="quote">Request Quote</option>
+                      <option value="tracking">Tracking Support</option>
+                      <option value="complaint">Complaint</option>
+                      <option value="partnership">Partnership</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+                    Message *
+                  </label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    required
+                    rows={5}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    placeholder="Tell us how we can help you..."
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center space-x-2"
+                >
+                  <Send className="h-5 w-5" />
+                  <span>{isSubmitting ? 'Sending...' : 'Send Message'}</span>
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Office Locations */}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <MapPin className="h-6 w-6 text-red-600" />
+                  <span>Our Offices</span>
+                </CardTitle>
+                <CardDescription>
+                  Visit us at any of our office locations across India
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {offices.map((office, index) => (
+                    <div key={index} className="border-b border-gray-200 last:border-b-0 pb-4 last:pb-0">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">{office.city}</h4>
+                      <div className="space-y-1 text-sm text-gray-600">
+                        <p className="flex items-start space-x-2">
+                          <MapPin className="h-4 w-4 mt-0.5 text-gray-400" />
+                          <span>{office.address}</span>
+                        </p>
+                        <p className="flex items-center space-x-2">
+                          <Phone className="h-4 w-4 text-gray-400" />
+                          <span>{office.phone}</span>
+                        </p>
+                        <p className="flex items-center space-x-2">
+                          <Mail className="h-4 w-4 text-gray-400" />
+                          <span>{office.email}</span>
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Emergency Contact */}
+            <Card className="bg-red-50 border-red-200">
+              <CardHeader>
+                <CardTitle className="text-red-800">Emergency Support</CardTitle>
+                <CardDescription className="text-red-600">
+                  24/7 emergency support for urgent logistics needs
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <Phone className="h-5 w-5 text-red-600" />
+                    <div>
+                      <p className="font-semibold text-red-800">Emergency Hotline</p>
+                      <p className="text-red-600">+91-9999999999</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Mail className="h-5 w-5 text-red-600" />
+                    <div>
+                      <p className="font-semibold text-red-800">Emergency Email</p>
+                      <p className="text-red-600">emergency@princeenterprises.com</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </section>
 
-      {/* Contact Information */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12">
-            <div>
-              <h2 className="text-3xl font-bold mb-6">Get In Touch</h2>
-              <p className="text-gray-600 mb-8">
-                We&apos;re here to help with any questions you may have about our services. Reach out to us through any of
-                the channels below or fill out the contact form.
-              </p>
-
-              <div className="space-y-6">
-                <div className="flex items-start">
-                  <div className="bg-red-100 p-3 rounded-full mr-4">
-                    <MapPin className="h-6 w-6 text-red-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg mb-1">Head Office</h3>
-                    <p className="text-gray-600">
-                      Prince Enterprises, Maur Mandi
-                      <br />
-                      Punjab, India
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start">
-                  <div className="bg-blue-100 p-3 rounded-full mr-4">
-                    <Phone className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg mb-1">Phone</h3>
-                    <p className="text-gray-600">
-                      Customer Support: +91 93172 24000
-                      <br />
-                      Business Inquiries: +91 93172 24000
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start">
-                  <div className="bg-green-100 p-3 rounded-full mr-4">
-                    <Mail className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg mb-1">Email</h3>
-                    <p className="text-gray-600">
-                      Customer Support: princejagga165@gmail.com
-                      <br />
-                      Business Inquiries: princejagga165@gmail.com
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start">
-                  <div className="bg-purple-100 p-3 rounded-full mr-4">
-                    <Clock className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg mb-1">Business Hours</h3>
-                    <p className="text-gray-600">
-                      Monday - Saturday: 9:00 AM - 6:00 PM
-                      <br />
-                      Sunday: Closed
-                    </p>
-                  </div>
-                </div>
+        {/* Map Section */}
+        <Card className="mt-12">
+          <CardHeader>
+            <CardTitle>Find Us</CardTitle>
+            <CardDescription>
+              Our main office location in Mumbai
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-gray-200 h-64 rounded-lg flex items-center justify-center">
+              <div className="text-center text-gray-500">
+                <MapPin className="h-12 w-12 mx-auto mb-2" />
+                <p>Interactive map would be integrated here</p>
+                <p className="text-sm">123 Business Center, Mumbai, Maharashtra 400001</p>
               </div>
             </div>
-
-            <div>
-              {!formSubmitted ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Send Us a Message</CardTitle>
-                    <CardDescription>
-                      Fill out the form below and we&apos;ll get back to you as soon as possible
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="first-name">First Name</Label>
-                          <Input id="first-name" placeholder="First name" required />
-                        </div>
-                        <div>
-                          <Label htmlFor="last-name">Last Name</Label>
-                          <Input id="last-name" placeholder="Last name" required />
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="email">Email Address</Label>
-                        <Input id="email" type="email" placeholder="Email address" required />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="phone">Phone Number</Label>
-                        <Input id="phone" placeholder="Phone number" required />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="subject">Subject</Label>
-                        <Select required>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select subject" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="general">General Inquiry</SelectItem>
-                            <SelectItem value="quote">Request a Quote</SelectItem>
-                            <SelectItem value="support">Customer Support</SelectItem>
-                            <SelectItem value="feedback">Feedback</SelectItem>
-                            <SelectItem value="complaint">Complaint</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="message">Message</Label>
-                        <Textarea
-                          id="message"
-                          placeholder="Please provide details about your inquiry"
-                          rows={5}
-                          required
-                        />
-                      </div>
-
-                      <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
-                        <Send className="mr-2 h-4 w-4" />
-                        Send Message
-                      </Button>
-                    </form>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="border-green-200 bg-green-50">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col items-center text-center">
-                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                        <CheckCircle className="h-8 w-8 text-green-600" />
-                      </div>
-                      <h2 className="text-2xl font-bold text-green-800 mb-2">Message Sent!</h2>
-                      <p className="text-green-700 mb-6">
-                        Thank you for contacting Prince Enterprises. We have received your message and will get back to
-                        you shortly.
-                      </p>
-                      <Button className="bg-green-600 hover:bg-green-700" onClick={() => setFormSubmitted(false)}>
-                        Send Another Message
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <h2 className="text-3xl font-bold mb-6">Frequently Asked Questions</h2>
-            <p className="text-gray-600">Find quick answers to common questions about our services</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            <Card>
-              <CardHeader>
-                <CardTitle>How do I track my shipment?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  You can track your shipment by entering your tracking number on our Track page or by contacting our
-                  customer support team with your reference number.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>What are your delivery timelines?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Delivery timelines vary based on the service selected and destination. Express delivery typically
-                  takes 1-2 days for major cities, while standard delivery can take 3-5 days.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>How do I book a shipment?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  You can book a shipment through our E-Booking page, by calling our customer service, or by visiting
-                  any of our branch locations with your package.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>What items are prohibited for shipping?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">
-                  Prohibited items include dangerous goods, perishables without proper packaging, illegal substances,
-                  and valuables without declared value and insurance.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
