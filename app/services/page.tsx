@@ -1,96 +1,101 @@
-import { Truck, Package, Clock, Shield, MapPin, Warehouse } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
+﻿"use client"
+
+import { Truck, Package, Clock, Shield, MapPin, Phone } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
 export default function ServicesPage() {
   const services = [
     {
-      icon: Truck,
-      title: "Freight Transportation",
-      description: "Reliable freight transportation services across India with real-time tracking.",
-      features: ["Pan-India Coverage", "Real-time Tracking", "Insured Cargo", "24/7 Support"],
-    },
-    {
-      icon: Package,
+      icon: <Truck className="h-8 w-8 text-red-600" />,
       title: "Express Delivery",
-      description: "Fast and secure express delivery services for urgent shipments.",
-      features: ["Same-day Delivery", "Express Handling", "Priority Support", "SMS Updates"],
+      description: "Same day and next day delivery for urgent shipments",
+      features: ["Same day delivery", "Real-time tracking", "Priority handling"],
+      price: "Starting from ₹200"
     },
     {
-      icon: Warehouse,
-      title: "Warehousing Solutions",
-      description: "Modern warehousing facilities with advanced inventory management.",
-      features: ["Climate Controlled", "Security Systems", "Inventory Management", "Easy Access"],
+      icon: <Package className="h-8 w-8 text-red-600" />,
+      title: "Standard Shipping",
+      description: "Cost-effective solution for regular deliveries",
+      features: ["3-5 business days", "Secure packaging", "Insurance included"],
+      price: "Starting from ₹50"
     },
     {
-      icon: Shield,
-      title: "Insured Transport",
-      description: "Complete insurance coverage for your valuable shipments.",
-      features: ["Full Coverage", "Quick Claims", "Risk Assessment", "Premium Protection"],
-    },
-    {
-      icon: Clock,
-      title: "Scheduled Delivery",
-      description: "Flexible delivery schedules to meet your business requirements.",
-      features: ["Time Slots", "Advance Booking", "Recurring Deliveries", "Flexible Timing"],
-    },
-    {
-      icon: MapPin,
-      title: "Last Mile Delivery",
-      description: "Efficient last-mile delivery solutions for e-commerce and retail.",
-      features: ["Door-to-Door", "Proof of Delivery", "Customer Notifications", "Return Handling"],
-    },
+      icon: <Shield className="h-8 w-8 text-red-600" />,
+      title: "Fragile Handling",
+      description: "Special care for delicate and valuable items",
+      features: ["Extra padding", "Careful handling", "Photo proof"],
+      price: "Starting from ₹150"
+    }
   ]
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4">Our Services</h1>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Comprehensive logistics and transportation solutions designed to meet all your business needs
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Our Services</h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Comprehensive logistics solutions tailored to meet your shipping needs
+          </p>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {services.map((service, index) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                <service.icon className="h-6 w-6 text-blue-600" />
-              </div>
-              <CardTitle>{service.title}</CardTitle>
-              <CardDescription>{service.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {service.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-center text-sm">
-                    <div className="w-2 h-2 bg-blue-600 rounded-full mr-2"></div>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+        {/* Services Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          {services.map((service, index) => (
+            <Card key={index} className="hover:shadow-lg transition-shadow">
+              <CardHeader className="text-center">
+                <div className="flex justify-center mb-4">
+                  {service.icon}
+                </div>
+                <CardTitle className="text-xl">{service.title}</CardTitle>
+                <CardDescription>{service.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 mb-4">
+                  {service.features.map((feature, idx) => (
+                    <li key={idx} className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-red-600 rounded-full"></div>
+                      <span className="text-sm">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="text-lg font-semibold text-red-600 mb-4">
+                  {service.price}
+                </div>
+                <Button className="w-full bg-red-600 hover:bg-red-700">
+                  Get Quote
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-      {/* CTA Section */}
-      <div className="mt-16 bg-blue-600 text-white rounded-lg p-8 text-center">
-        <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
-        <p className="text-xl mb-6">Contact us today for a customized logistics solution</p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/contact">
-            <Button variant="secondary" size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
-              Contact Us
-            </Button>
-          </Link>
-          <Link href="/booking">
-            <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-blue-600">
-              Book Now
-            </Button>
-          </Link>
+        {/* Additional Services */}
+        <div className="bg-white rounded-lg p-8">
+          <h2 className="text-2xl font-bold text-center mb-8">Why Choose Prince Enterprises?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="text-center">
+              <Clock className="h-12 w-12 text-red-600 mx-auto mb-4" />
+              <h3 className="font-semibold mb-2">Fast Delivery</h3>
+              <p className="text-gray-600">Quick and reliable shipping</p>
+            </div>
+            <div className="text-center">
+              <MapPin className="h-12 w-12 text-red-600 mx-auto mb-4" />
+              <h3 className="font-semibold mb-2">Wide Coverage</h3>
+              <p className="text-gray-600">Pan-India delivery network</p>
+            </div>
+            <div className="text-center">
+              <Shield className="h-12 w-12 text-red-600 mx-auto mb-4" />
+              <h3 className="font-semibold mb-2">Secure Handling</h3>
+              <p className="text-gray-600">Safe and secure packaging</p>
+            </div>
+            <div className="text-center">
+              <Phone className="h-12 w-12 text-red-600 mx-auto mb-4" />
+              <h3 className="font-semibold mb-2">24/7 Support</h3>
+              <p className="text-gray-600">Round-the-clock assistance</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

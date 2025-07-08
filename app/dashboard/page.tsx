@@ -1,228 +1,168 @@
-"use client"
+﻿"use client"
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/context/auth-context"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Package, Truck, FileText, Settings, LogOut } from "lucide-react"
-import Link from "next/link"
-import PrivateRoute from "@/components/PrivateRoute"
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Package, Truck, Clock, User, Plus, Search } from 'lucide-react'
+import { useAuth } from '@/context/auth-context'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
-export default function DashboardPage() {
-  return (
-    <PrivateRoute>
-      <DashboardContent />
-    </PrivateRoute>
-  )
-}
-
-function DashboardContent() {
-  const { user, isLoading, logout } = useAuth()
+export default function UserDashboard() {
+  const { user, logout, isLoading } = useAuth()
   const router = useRouter()
-  const [userBookings, setUserBookings] = useState([])
+  const [shipments] = useState([
+    { id: 'AWB123456789', status: 'delivered', from: 'Mumbai', to: 'Delhi', date: '2024-12-15' },
+    { id: 'AWB987654321', status: 'in-transit', from: 'Pune', to: 'Bangalore', date: '2024-12-16' },
+    { id: 'AWB555666777', status: 'picked-up', from: 'Chennai', to: 'Hyderabad', date: '2024-12-16' }
+  ])
 
   useEffect(() => {
     if (!isLoading && !user) {
-      router.push("/login")
+      router.push('/')
     }
   }, [user, isLoading, router])
 
-  useEffect(() => {
-    const fetchUserBookings = async () => {
-      const res = await fetch(`/api/bookings?userId=${user?.id}`)
-      const data = await res.json()
-      if (data.success) {
-        setUserBookings(data.bookings)
-      }
-    }
-
-    if (user?.id) {
-      fetchUserBookings()
-    }
-  }, [user])
-
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-12 flex justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
       </div>
     )
   }
 
-  if (!user) {
-    return null // Will redirect in useEffect
-  }
+  if (!user) return null
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Welcome, {user.name}</h1>
-          <p className="text-gray-600">Manage your shipments and account details</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+              <p className="text-gray-600">Welcome back, {user.name}!</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Button onClick={() => router.push('/booking')} className="bg-red-600 hover:bg-red-700">
+                <Plus className="h-4 w-4 mr-2" />
+                New Shipment
+              </Button>
+              <Button onClick={logout} variant="outline">
+                Logout
+              </Button>
+            </div>
+          </div>
         </div>
-        <Button variant="outline" onClick={logout} className="flex items-center gap-2">
-          <LogOut className="h-4 w-4" />
-          Logout
-        </Button>
-      </div>
+      </header>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm text-gray-500">Active Shipments</p>
-                <p className="text-3xl font-bold">3</p>
-              </div>
-              <div className="bg-blue-100 p-3 rounded-full">
-                <Package className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm text-gray-500">Delivered</p>
-                <p className="text-3xl font-bold">12</p>
-              </div>
-              <div className="bg-green-100 p-3 rounded-full">
-                <Truck className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm text-gray-500">Pending Quotes</p>
-                <p className="text-3xl font-bold">2</p>
-              </div>
-              <div className="bg-orange-100 p-3 rounded-full">
-                <FileText className="h-6 w-6 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-sm text-gray-500">Account Status</p>
-                <p className="text-lg font-medium text-green-600">Active</p>
-              </div>
-              <div className="bg-purple-100 p-3 rounded-full">
-                <Settings className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
-            <CardHeader>
-              <CardTitle>Recent Shipments</CardTitle>
-              <CardDescription>Track and manage your recent shipments</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Shipments</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="border rounded-md p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-semibold">PE123456789</p>
-                      <p className="text-sm text-gray-500">Delhi to Mumbai</p>
-                    </div>
-                    <div className="bg-green-100 text-green-700 text-xs font-medium px-2 py-1 rounded">Delivered</div>
-                  </div>
-                  <div className="mt-2 text-sm text-gray-600">
-                    <p>Delivered on: June 12, 2024</p>
-                  </div>
-                  <div className="mt-2">
-                    <Link href="/track?id=PE123456789">
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
+              <div className="text-2xl font-bold">{shipments.length}</div>
+            </CardContent>
+          </Card>
 
-                <div className="border rounded-md p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-semibold">PE987654321</p>
-                      <p className="text-sm text-gray-500">Bangalore to Chennai</p>
-                    </div>
-                    <div className="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-1 rounded">In Transit</div>
-                  </div>
-                  <div className="mt-2 text-sm text-gray-600">
-                    <p>Expected delivery: June 14, 2024</p>
-                  </div>
-                  <div className="mt-2">
-                    <Link href="/track?id=PE987654321">
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">In Transit</CardTitle>
+              <Truck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {shipments.filter(s => s.status === 'in-transit').length}
               </div>
+            </CardContent>
+          </Card>
 
-              <div className="mt-4 text-center">
-                <Link href="/shipments">
-                  <Button variant="link" className="text-red-600">
-                    View All Shipments
-                  </Button>
-                </Link>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Delivered</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {shipments.filter(s => s.status === 'delivered').length}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <div>
-          <Card>
+        {/* Recent Shipments */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Shipments</CardTitle>
+            <CardDescription>Your latest shipping activities</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {shipments.map((shipment) => (
+                <div key={shipment.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                  <div>
+                    <p className="font-medium">{shipment.id}</p>
+                    <p className="text-sm text-gray-600">{shipment.from}  {shipment.to}</p>
+                    <p className="text-xs text-gray-500">{shipment.date}</p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    shipment.status === 'delivered' 
+                      ? 'bg-green-100 text-green-800'
+                      : shipment.status === 'in-transit'
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {shipment.status.replace('-', ' ')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/booking')}>
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Common tasks and actions</CardDescription>
+              <CardTitle className="flex items-center space-x-2">
+                <Plus className="h-5 w-5" />
+                <span>New Booking</span>
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <Link href="/booking">
-                  <Button className="w-full bg-red-600 hover:bg-red-700 justify-start">
-                    <Package className="mr-2 h-4 w-4" />
-                    Book New Shipment
-                  </Button>
-                </Link>
-                <Link href="/track">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Truck className="mr-2 h-4 w-4" />
-                    Track Shipment
-                  </Button>
-                </Link>
-                <Link href="/quote">
-                  <Button variant="outline" className="w-full justify-start">
-                    <FileText className="mr-2 h-4 w-4" />
-                    Request Quote
-                  </Button>
-                </Link>
-                <Link href="/profile">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Account Settings
-                  </Button>
-                </Link>
-              </div>
+              <p className="text-sm text-gray-600">Create a new shipment booking</p>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/track')}>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Search className="h-5 w-5" />
+                <span>Track Package</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">Track your shipments in real-time</p>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => router.push('/quote')}>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Package className="h-5 w-5" />
+                <span>Get Quote</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600">Calculate shipping costs</p>
             </CardContent>
           </Card>
         </div>
-      </div>
+      </main>
     </div>
   )
 }

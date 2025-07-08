@@ -1,45 +1,53 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextResponse } from 'next/server'
+import { generateToken } from '@/lib/auth'
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const { name, email, password } = await request.json()
 
-    // Basic validation
     if (!name || !email || !password) {
       return NextResponse.json(
-        { message: "All fields are required" },
+        { success: false, message: 'All fields are required' },
         { status: 400 }
       )
     }
 
-    if (password.length < 6) {
-      return NextResponse.json(
-        { message: "Password must be at least 6 characters" },
-        { status: 400 }
-      )
-    }
-
-    // Create user object (in production, save to database)
-    const user = {
-      id: Date.now().toString(),
+    // For demo purposes, create a mock user
+    const userData = {
+      id: 'user-' + Date.now(),
       name,
       email,
-      role: "user" as const,
+      role: 'user'
     }
 
-    // Generate simple token (in production, use proper JWT)
-    const token = `token_${user.id}_${Date.now()}`
-
-    return NextResponse.json({
-      success: true,
-      message: "Registration successful",
-      user,
-      token,
+    const token = generateToken({
+      userId: userData.id,
+      email: userData.email,
+      name: userData.name,
+      role: userData.role,
+      type: 'user'
     })
+
+    const response = NextResponse.json({
+      success: true,
+      message: 'Registration successful',
+      user: userData,
+      token
+    })
+
+    response.cookies.set('auth-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000
+    })
+
+    return response
+
   } catch (error) {
-    console.error("Registration error:", error)
+    console.error('Registration error:', error)
     return NextResponse.json(
-      { message: "Internal server error" },
+      { success: false, message: 'Registration failed' },
       { status: 500 }
     )
   }

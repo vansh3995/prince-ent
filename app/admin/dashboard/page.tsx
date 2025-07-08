@@ -1,146 +1,245 @@
-"use client"
+﻿"use client"
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { BarChart3, Users, Package, DollarSign, TrendingUp, Truck } from 'lucide-react'
-import { useAdminAuth } from '@/context/admin-auth-context'
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useAdminAuth } from "@/context/admin-auth-context"
+import { 
+  BarChart3, 
+  Package, 
+  Users, 
+  TrendingUp, 
+  Bell, 
+  Settings,
+  Calendar,
+  Activity
+} from "lucide-react"
 
-export default function AdminDashboard() {
-  const router = useRouter()
+export default function AdminDashboardPage() {
   const { admin, isLoading } = useAdminAuth()
-  const [dashboardLoading, setDashboardLoading] = useState(true)
-  
+  const router = useRouter()
+  const [stats, setStats] = useState({
+    totalBookings: 1234,
+    activeShipments: 89,
+    totalRevenue: 250000,
+    completedDeliveries: 1089
+  })
+
   useEffect(() => {
-    if (!isLoading) {
-      if (!admin) {
-        router.push('/admin/login')
-      } else {
-        setDashboardLoading(false)
-      }
+    if (!isLoading && !admin) {
+      router.push("/admin/login")
     }
   }, [admin, isLoading, router])
 
-  if (isLoading || dashboardLoading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p>Loading...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     )
   }
 
   if (!admin) {
-    return null // Will redirect to login
+    return null
   }
 
-  const stats = [
-    { title: 'Total Bookings', value: '1,234', icon: Package, color: 'bg-blue-500', change: '+12%' },
-    { title: 'Active Shipments', value: '89', icon: Truck, color: 'bg-green-500', change: '+8%' },
-    { title: 'Revenue Today', value: '₹2,45,000', icon: DollarSign, color: 'bg-yellow-500', change: '+15%' },
-    { title: 'Growth Rate', value: '+12%', icon: TrendingUp, color: 'bg-purple-500', change: '+3%' },
-  ]
-
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4">
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-2">Welcome back, {admin.username}!</p>
-          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded">
-            <p className="text-green-800">✅ Login successful!</p>
-            <p className="text-sm text-green-600 mt-1">
-              Role: {admin.role} | Email: {admin.email}
-            </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+              <p className="text-gray-600">Welcome back, {admin.username}!</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button
+                type="button"
+                onClick={() => router.push('/admin/notifications')}
+                className="relative p-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors"
+                aria-label="View notifications (3 unread)"
+                title="View notifications"
+              >
+                <Bell className="h-6 w-6" />
+                <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                  3
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push('/admin/settings')}
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-md transition-colors"
+                aria-label="Open settings"
+                title="Settings"
+              >
+                <Settings className="h-6 w-6" />
+              </button>
+            </div>
           </div>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                  <p className="text-sm text-green-600 mt-1">{stat.change}</p>
-                </div>
-                <div className={`p-3 rounded-full ${stat.color}`}>
-                  <stat.icon className="h-6 w-6 text-white" />
-                </div>
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Package className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-600">Total Bookings</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalBookings.toLocaleString()}</p>
               </div>
             </div>
-          ))}
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <Activity className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-600">Active Shipments</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.activeShipments}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-600">Total Revenue</p>
+                <p className="text-2xl font-bold text-gray-900">₹{(stats.totalRevenue / 1000).toFixed(0)}K</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Users className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-600">Completed</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.completedDeliveries.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid md:grid-cols-3 gap-6">
-          <div 
-            className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-blue-500"
+        {/* Quick Actions Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <button
+            type="button"
+            className="bg-white rounded-lg shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow text-left"
             onClick={() => router.push("/admin/bookings")}
+            aria-label="Manage bookings - View and manage all parcel bookings"
           >
-            <div className="flex items-center mb-4">
-              <Package className="h-8 w-8 text-blue-500 mr-3" />
-              <h2 className="text-xl font-semibold">All Bookings</h2>
+            <div className="flex items-center space-x-3">
+              <Package className="h-8 w-8 text-blue-600" />
+              <div>
+                <h3 className="text-lg font-semibold">Manage Bookings</h3>
+                <p className="text-gray-600">View and manage all parcel bookings</p>
+              </div>
             </div>
-            <p className="text-gray-600">View and manage all parcel bookings.</p>
-            <div className="mt-4 text-blue-600 text-sm font-medium">
-              View Details →
-            </div>
-          </div>
-          
-          <div 
-            className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-green-500"
+          </button>
+
+          <button
+            type="button"
+            className="bg-white rounded-lg shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow text-left"
             onClick={() => router.push("/admin/quotes")}
+            aria-label="Quote requests - Review and respond to quotes"
           >
-            <div className="flex items-center mb-4">
-              <DollarSign className="h-8 w-8 text-green-500 mr-3" />
-              <h2 className="text-xl font-semibold">All Quotes</h2>
+            <div className="flex items-center space-x-3">
+              <TrendingUp className="h-8 w-8 text-green-600" />
+              <div>
+                <h3 className="text-lg font-semibold">Quote Requests</h3>
+                <p className="text-gray-600">Review and respond to quotes</p>
+              </div>
             </div>
-            <p className="text-gray-600">View all quote requests from users.</p>
-            <div className="mt-4 text-green-600 text-sm font-medium">
-              View Details →
-            </div>
-          </div>
-          
-          <div 
-            className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-purple-500"
+          </button>
+
+          <button
+            type="button"
+            className="bg-white rounded-lg shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow text-left"
             onClick={() => router.push("/admin/analytics")}
+            aria-label="Analytics - View business insights and metrics"
           >
-            <div className="flex items-center mb-4">
-              <BarChart3 className="h-8 w-8 text-purple-500 mr-3" />
-              <h2 className="text-xl font-semibold">Analytics</h2>
+            <div className="flex items-center space-x-3">
+              <BarChart3 className="h-8 w-8 text-purple-600" />
+              <div>
+                <h3 className="text-lg font-semibold">Analytics</h3>
+                <p className="text-gray-600">View business insights and metrics</p>
+              </div>
             </div>
-            <p className="text-gray-600">See booking trends and city-wise stats.</p>
-            <div className="mt-4 text-purple-600 text-sm font-medium">
-              View Details →
+          </button>
+
+          <button
+            type="button"
+            className="bg-white rounded-lg shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow text-left"
+            onClick={() => router.push("/admin/analytics/live")}
+            aria-label="Live analytics - Real-time monitoring dashboard"
+          >
+            <div className="flex items-center space-x-3">
+              <Activity className="h-8 w-8 text-red-600" />
+              <div>
+                <h3 className="text-lg font-semibold">Live Analytics</h3>
+                <p className="text-gray-600">Real-time monitoring dashboard</p>
+              </div>
             </div>
-          </div>
+          </button>
+
+          <button
+            type="button"
+            className="bg-white rounded-lg shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow text-left"
+            onClick={() => router.push("/admin/notifications")}
+            aria-label="Notifications - View system notifications"
+          >
+            <div className="flex items-center space-x-3">
+              <Bell className="h-8 w-8 text-yellow-600" />
+              <div>
+                <h3 className="text-lg font-semibold">Notifications</h3>
+                <p className="text-gray-600">View system notifications</p>
+              </div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            className="bg-white rounded-lg shadow-sm p-6 cursor-pointer hover:shadow-md transition-shadow text-left"
+            onClick={() => router.push("/admin/staff")}
+            aria-label="Staff management - Manage admin users and roles"
+          >
+            <div className="flex items-center space-x-3">
+              <Users className="h-8 w-8 text-indigo-600" />
+              <div>
+                <h3 className="text-lg font-semibold">Staff Management</h3>
+                <p className="text-gray-600">Manage admin users and roles</p>
+              </div>
+            </div>
+          </button>
         </div>
 
         {/* Recent Activity */}
-        <div className="mt-8 bg-white rounded-lg shadow-md">
-          <div className="p-6 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">New booking received from Mumbai to Delhi</span>
-                <span className="text-xs text-gray-400">2 mins ago</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">Shipment BK001 delivered successfully</span>
-                <span className="text-xs text-gray-400">5 mins ago</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">Payment received for booking BK002</span>
-                <span className="text-xs text-gray-400">10 mins ago</span>
-              </div>
+        <div className="mt-8 bg-white rounded-lg shadow-sm p-6">
+          <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
+          <div className="space-y-3">
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+              <div className="w-2 h-2 bg-green-500 rounded-full" aria-hidden="true"></div>
+              <span className="text-sm text-gray-600">New booking from Mumbai to Delhi - 2 min ago</span>
+            </div>
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+              <div className="w-2 h-2 bg-blue-500 rounded-full" aria-hidden="true"></div>
+              <span className="text-sm text-gray-600">Shipment delivered in Bangalore - 5 min ago</span>
+            </div>
+            <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full" aria-hidden="true"></div>
+              <span className="text-sm text-gray-600">Quote request received - 8 min ago</span>
             </div>
           </div>
         </div>

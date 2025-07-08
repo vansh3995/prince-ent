@@ -1,20 +1,9 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken } from '@/lib/auth'
+import { verifyToken, getTokenFromRequest } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get token from Authorization header
-    const authHeader = request.headers.get('authorization')
-    let token = null
-
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7)
-    }
-
-    // Also try to get from cookies as fallback
-    if (!token) {
-      token = request.cookies.get('admin-token')?.value
-    }
+    const token = getTokenFromRequest(request)
 
     if (!token) {
       return NextResponse.json(
@@ -25,25 +14,25 @@ export async function GET(request: NextRequest) {
 
     const payload = verifyToken(token)
 
-    if (!payload || payload.type !== 'admin') {
+    if (!payload || payload.type !== 'user') {
       return NextResponse.json(
-        { success: false, message: 'Invalid admin token' },
+        { success: false, message: 'Invalid user token' },
         { status: 401 }
       )
     }
 
     return NextResponse.json({
       success: true,
-      admin: {
-        id: payload.adminId,
-        username: payload.username,
+      user: {
+        id: payload.userId,
+        name: payload.name,
         email: payload.email,
         role: payload.role
       }
     })
 
   } catch (error) {
-    console.error('Admin verification error:', error)
+    console.error('User verification error:', error)
     return NextResponse.json(
       { success: false, message: 'Token verification failed' },
       { status: 401 }

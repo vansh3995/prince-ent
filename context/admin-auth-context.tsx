@@ -1,13 +1,12 @@
 ﻿"use client"
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
 interface Admin {
   id: string
-  email: string
   username: string
-  role: string
+  email?: string
+  role: 'admin' | 'superadmin'
 }
 
 interface AdminAuthContextType {
@@ -19,91 +18,101 @@ interface AdminAuthContextType {
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined)
 
-export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
+export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [admin, setAdmin] = useState<Admin | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken')
-    const adminData = localStorage.getItem('adminData')
-    
-    if (token && adminData) {
-      try {
-        setAdmin(JSON.parse(adminData))
-      } catch (error) {
-        console.error('Failed to parse admin data:', error)
+    checkAuth()
+  }, [])
+
+  const checkAuth = async () => {
+    try {
+      if (typeof window === 'undefined') {
+        setIsLoading(false)
+        return
+      }
+
+      const token = localStorage.getItem('adminToken')
+      if (!token) {
+        setIsLoading(false)
+        return
+      }
+
+      const response = await fetch('/api/admin/auth/verify', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.admin) {
+          setAdmin(data.admin)
+        } else {
+          localStorage.removeItem('adminToken')
+        }
+      } else {
         localStorage.removeItem('adminToken')
-        localStorage.removeItem('adminData')
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error)
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('adminToken')
       }
     }
+    
     setIsLoading(false)
-  }, [])
+  }
 
   const login = async (username: string, password: string) => {
     try {
-      // Ensure parameters are strings and not empty
-      const usernameStr = String(username || '').trim()
-      const passwordStr = String(password || '').trim()
-      
-      console.log(' Attempting login with:', { username: usernameStr, password: '***' })
-      
-      if (!usernameStr || !passwordStr) {
-        throw new Error('Username and password are required')
-      }
-      
       const response = await fetch('/api/admin/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          username: usernameStr, 
-          password: passwordStr 
-        }),
+        body: JSON.stringify({ username, password }),
       })
 
       const data = await response.json()
-      console.log(' Login response:', data)
 
       if (!response.ok) {
         throw new Error(data.message || 'Login failed')
       }
 
-      if (data.success && data.user && data.token) {
+      if (data.success && data.admin && data.token) {
         localStorage.setItem('adminToken', data.token)
-        localStorage.setItem('adminData', JSON.stringify(data.user))
-        setAdmin(data.user)
-        router.push('/admin/dashboard')
+        setAdmin(data.admin)
       } else {
-        throw new Error('Invalid response format')
+        throw new Error('Invalid response from server')
       }
     } catch (error) {
-      console.error('Login failed:', error)
       throw error
     }
   }
 
   const logout = () => {
-    localStorage.removeItem('adminToken')
-    localStorage.removeItem('adminData')
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('adminToken')
+    }
     setAdmin(null)
-    router.push('/admin/login')
   }
 
   return (
-    <AdminAuthContext.Provider value={{ 
-      admin, 
-      isLoading, 
-      login, 
-      logout 
+    <AdminAuthContext.Provider value={{
+      admin,
+      isLoading,
+      login,
+      logout
     }}>
       {children}
     </AdminAuthContext.Provider>
   )
 }
 
-export function useAdminAuth() {
+export const useAdminAuth = () => {
   const context = useContext(AdminAuthContext)
   if (context === undefined) {
     throw new Error('useAdminAuth must be used within an AdminAuthProvider')

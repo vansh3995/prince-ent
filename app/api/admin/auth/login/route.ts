@@ -1,69 +1,111 @@
 ﻿import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
-import jwt from 'jsonwebtoken'
+import { generateToken } from '@/lib/auth'
+import { seedAdminUser } from '@/lib/seed-admin'
 import bcrypt from 'bcryptjs'
 
 export async function POST(request: Request) {
   try {
-    const { email, username, password } = await request.json()
-    
-    // Accept either email or username
-    const loginField = email || username
-    
-    if (!loginField || !password) {
+    const { username, password } = await request.json()
+
+    if (!username || !password) {
       return NextResponse.json(
-        { message: 'Email/Username and password are required' },
+        { message: 'Username and password are required' },
         { status: 400 }
       )
     }
 
-    const db = await connectToDatabase()
-    
-    // Search by email or username
-    const admin = await db.collection('admins').findOne({
-      $or: [
-        { email: loginField },
-        { username: loginField }
-      ]
-    })
+    // Seed admin user if it doesn't exist
+    await seedAdminUser()
 
-    if (!admin) {
-      return NextResponse.json(
-        { message: 'Invalid credentials' },
-        { status: 401 }
-      )
+    // Demo admin credentials - always allow this
+    if (username === 'admin' && password === 'admin123') {
+      const token = generateToken({
+        adminId: '507f1f77bcf86cd799439011',
+        username: 'admin',
+        email: 'admin@princeenterprises.com',
+        role: 'superadmin',
+        type: 'admin'
+      })
+
+      const response = NextResponse.json({
+        success: true,
+        message: 'Login successful',
+        token,
+        admin: {
+          id: '507f1f77bcf86cd799439011',
+          username: 'admin',
+          email: 'admin@princeenterprises.com',
+          role: 'superadmin'
+        }
+      })
+
+      // Set token in cookie
+      response.cookies.set('admin-token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 86400 // 24 hours
+      })
+
+      return response
     }
 
-    const isPasswordValid = await bcrypt.compare(password, admin.password)
-    
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { message: 'Invalid credentials' },
-        { status: 401 }
-      )
-    }
+    // Try database lookup for other admins
+    try {
+      const { db } = await connectToDatabase()
+      const admin = await db.collection('admins').findOne({ username })
 
-    const token = jwt.sign(
-      { 
-        userId: admin._id,
-        email: admin.email,
-        role: admin.role 
-      },
-      process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: '24h' }
-    )
+      if (!admin) {
+        return NextResponse.json(
+          { message: 'Invalid credentials' },
+          { status: 401 }
+        )
+      }
 
-    return NextResponse.json({
-      success: true,
-      message: 'Login successful',
-      user: {
-        id: admin._id,
-        email: admin.email,
+      const isValidPassword = await bcrypt.compare(password, admin.password)
+      if (!isValidPassword) {
+        return NextResponse.json(
+          { message: 'Invalid credentials' },
+          { status: 401 }
+        )
+      }
+
+      const token = generateToken({
+        adminId: admin._id.toString(),
         username: admin.username,
-        role: admin.role
-      },
-      token
-    })
+        email: admin.email,
+        role: admin.role,
+        type: 'admin'
+      })
+
+      const response = NextResponse.json({
+        success: true,
+        message: 'Login successful',
+        token,
+        admin: {
+          id: admin._id.toString(),
+          username: admin.username,
+          email: admin.email,
+          role: admin.role
+        }
+      })
+
+      response.cookies.set('admin-token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 86400
+      })
+
+      return response
+    } catch (dbError) {
+      console.error('Database error:', dbError)
+      return NextResponse.json(
+        { message: 'Invalid credentials' },
+        { status: 401 }
+      )
+    }
 
   } catch (error) {
     console.error('Login error:', error)

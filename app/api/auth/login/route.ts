@@ -1,54 +1,60 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
+import { generateToken } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, role } = await request.json()
+    const { email, password, type } = await request.json()
 
-    // Demo credentials for testing
-    const credentials = {
-      admin: { email: 'admin@prince.com', password: 'admin123', name: 'Admin User' },
-      user: { email: 'user@prince.com', password: 'user123', name: 'Regular User' }
-    }
-
-    // Check credentials based on role
-    let userRole: 'admin' | 'user' = 'user'
-    let userName = ''
-
-    if (role === 'admin' && email === credentials.admin.email && password === credentials.admin.password) {
-      userRole = 'admin'
-      userName = credentials.admin.name
-    } else if (email === credentials.user.email && password === credentials.user.password) {
-      userRole = 'user'
-      userName = credentials.user.name
-    } else {
+    if (!email || !password) {
       return NextResponse.json(
-        { message: 'Invalid credentials' },
-        { status: 401 }
+        { success: false, message: 'Email and password required' },
+        { status: 400 }
       )
     }
 
-    // Create user object
-    const user = {
-      id: Date.now().toString(),
-      name: userName,
-      email,
-      role: userRole
+    // For demo purposes, use hardcoded user credentials
+    if (email === 'user@example.com' && password === 'user123') {
+      const userData = {
+        id: 'user-001',
+        name: 'Demo User',
+        email: email,
+        role: 'user'
+      }
+
+      const token = generateToken({
+        userId: userData.id,
+        email: userData.email,
+        name: userData.name,
+        role: userData.role,
+        type: 'user'
+      })
+
+      const response = NextResponse.json({
+        success: true,
+        message: 'Login successful',
+        user: userData,
+        token
+      })
+
+      response.cookies.set('auth-token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000
+      })
+
+      return response
     }
 
-    // Generate simple token (in production, use proper JWT)
-    const token = `token_${user.id}_${Date.now()}`
-
-    return NextResponse.json({
-      success: true,
-      message: 'Login successful',
-      user,
-      token
-    })
+    return NextResponse.json(
+      { success: false, message: 'Invalid credentials' },
+      { status: 401 }
+    )
 
   } catch (error) {
-    console.error('Login error:', error)
+    console.error('User login error:', error)
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { success: false, message: 'Internal server error' },
       { status: 500 }
     )
   }

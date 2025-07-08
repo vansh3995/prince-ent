@@ -1,13 +1,15 @@
 ﻿import './globals.css'
 import type { Metadata } from 'next'
-import Navbar from '@/components/navbar'
+import { Inter } from 'next/font/google'
 import { AuthProvider } from '@/context/auth-context'
 import { AdminAuthProvider } from '@/context/admin-auth-context'
-import { Toaster } from 'react-hot-toast'
+import Navbar from '@/components/navbar'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Prince Enterprises - Logistics & Transportation',
-  description: 'Professional logistics and transportation services across India',
+  description: 'Professional logistics and transportation services',
 }
 
 export default function RootLayout({
@@ -17,14 +19,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className={inter.className}>
         <AuthProvider>
           <AdminAuthProvider>
-            <div className="min-h-screen bg-gray-50">
-              <Navbar />
-              <main>{children}</main>
-              <Toaster position="top-right" />
-            </div>
+            <Navbar />
+            {children}
           </AdminAuthProvider>
         </AuthProvider>
       </body>

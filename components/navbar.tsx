@@ -43,8 +43,6 @@ export default function Navbar() {
   const handleDashboard = () => {
     if (admin) {
       router.push('/admin/dashboard')
-    } else if (user?.role === 'admin') {
-      router.push('/admin/dashboard')
     } else {
       router.push('/dashboard')
     }
@@ -172,7 +170,7 @@ export default function Navbar() {
               <button
                 aria-expanded={isOpen}
                 onClick={() => setIsOpen(!isOpen)}
-                className="text-gray-700 hover:text-red-600 transition-colors"
+                className="text-gray-700 hover:text-red-600 transition-colors p-2 rounded-md"
                 aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
                 type="button"
               >
@@ -206,26 +204,26 @@ export default function Navbar() {
                       <div className="px-3 py-2 text-sm text-gray-600">
                         Welcome, <span className="font-semibold">{admin?.username || user?.name}</span>
                       </div>
-                      <button onClick={handleDashboard} className="flex items-center space-x-2 w-full px-3 py-2 text-left text-gray-700 hover:text-red-600 transition-colors">
+                      <button type="button" onClick={handleDashboard} className="flex items-center space-x-2 w-full px-3 py-2 text-left text-gray-700 hover:text-red-600 transition-colors">
                         <BarChart3 className="h-4 w-4" />
                         <span>{admin ? 'Admin Panel' : 'Dashboard'}</span>
                       </button>
-                      <button onClick={handleLogout} className="flex items-center space-x-2 w-full px-3 py-2 text-left text-red-600 hover:text-red-700 transition-colors">
+                      <button type="button" onClick={handleLogout} className="flex items-center space-x-2 w-full px-3 py-2 text-left text-red-600 hover:text-red-700 transition-colors">
                         <LogOut className="h-4 w-4" />
                         <span>Logout</span>
                       </button>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <button onClick={openAdminLogin} className="flex items-center space-x-2 w-full px-3 py-2 text-left text-gray-700 hover:text-red-600 transition-colors">
+                      <button type="button" onClick={openAdminLogin} className="flex items-center space-x-2 w-full px-3 py-2 text-left text-gray-700 hover:text-red-600 transition-colors">
                         <Settings className="h-4 w-4" />
                         <span>Admin Login</span>
                       </button>
-                      <button onClick={openRegister} className="flex items-center space-x-2 w-full px-3 py-2 text-left text-gray-700 hover:text-red-600 transition-colors">
+                      <button type="button" onClick={openRegister} className="flex items-center space-x-2 w-full px-3 py-2 text-left text-gray-700 hover:text-red-600 transition-colors">
                         <UserPlus className="h-4 w-4" />
                         <span>Register</span>
                       </button>
-                      <button onClick={openUserLogin} className="flex items-center space-x-2 w-full px-3 py-2 text-left text-red-600 hover:text-red-700 transition-colors">
+                      <button type="button" onClick={openUserLogin} className="flex items-center space-x-2 w-full px-3 py-2 text-left text-red-600 hover:text-red-700 transition-colors">
                         <LogIn className="h-4 w-4" />
                         <span>User Login</span>
                       </button>
@@ -274,11 +272,11 @@ function LoginModal({ isOpen, onClose, loginType }: { isOpen: boolean; onClose: 
 
     try {
       if (loginType === 'admin') {
-        await adminLogin(username || '', password || '')
+        await adminLogin(username, password)
         onClose()
         router.push('/admin/dashboard')
       } else {
-        const result = await login(email || '', password || '', loginType)
+        const result = await login(email, password, loginType)
         if (result.success) {
           onClose()
           router.push('/dashboard')
@@ -287,6 +285,7 @@ function LoginModal({ isOpen, onClose, loginType }: { isOpen: boolean; onClose: 
         }
       }
     } catch (error: any) {
+      console.error('Login error:', error)
       setError(error.message || 'Login failed')
     }
     
@@ -303,10 +302,10 @@ function LoginModal({ isOpen, onClose, loginType }: { isOpen: boolean; onClose: 
             {loginType === 'admin' ? 'Admin Login' : 'User Login'}
           </h2>
           <button 
+            type="button"
             onClick={onClose} 
             className="text-gray-500 hover:text-gray-700"
             aria-label="Close login dialog"
-            type="button"
           >
             <X className="h-5 w-5" />
           </button>
@@ -326,7 +325,7 @@ function LoginModal({ isOpen, onClose, loginType }: { isOpen: boolean; onClose: 
                 <input
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value || '')}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="admin"
@@ -337,7 +336,7 @@ function LoginModal({ isOpen, onClose, loginType }: { isOpen: boolean; onClose: 
                 <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value || '')}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="admin123"
@@ -351,7 +350,7 @@ function LoginModal({ isOpen, onClose, loginType }: { isOpen: boolean; onClose: 
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value || '')}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="user@example.com"
@@ -362,7 +361,7 @@ function LoginModal({ isOpen, onClose, loginType }: { isOpen: boolean; onClose: 
                 <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value || '')}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   placeholder="Password"
@@ -422,7 +421,7 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
     setIsLoading(true)
 
     try {
-      const result = await register(name || '', email || '', password || '')
+      const result = await register(name, email, password)
       
       if (result.success) {
         onClose()
@@ -445,10 +444,10 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Create Account</h2>
           <button 
+            type="button"
             onClick={onClose} 
             className="text-gray-500 hover:text-gray-700"
             aria-label="Close registration dialog"
-            type="button"
           >
             <X className="h-5 w-5" />
           </button>
@@ -466,7 +465,7 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value || '')}
+              onChange={(e) => setName(e.target.value)}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="Enter your full name"
@@ -478,7 +477,7 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value || '')}
+              onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="Enter your email address"
@@ -490,7 +489,7 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value || '')}
+              onChange={(e) => setPassword(e.target.value)}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="Create a password"
@@ -502,7 +501,7 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
             <input
               type="password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value || '')}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="Confirm your password"

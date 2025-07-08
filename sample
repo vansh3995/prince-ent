@@ -1,0 +1,16 @@
+# MongoDB
+MONGODB_URI=mongodb+srv://aaru2301:Aaru%40230102@princeenterprises.rgm7qp7.mongodb.net/?retryWrites=true&w=majority&appName=PrinceEnterprises
+# NextAuth
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=d2cf392043ccf566cec7ec208818a87896e3d25468e59df09561da387b19d588fbd1c1f0df432d6997caa3b6e646cbb99ab4e3aa61debd5499b9b615814e3333
+# JWT Secret for Admin Auth
+JWT_SECRET=4fd532f3ece9625115feeaecc56a2eed4647a7a7a398bb06e112d18017658471ba08dd54f7c6e8ea3f410f1d12727f4c6b8c5e7b651bab8bbe4e3300f02dd109
+
+NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
+EMAIL_USER=noreply@prince-enterprise.com
+EMAIL_PASS=Aaru@230102
+
+NEXT_PRIVATE_DEBUG_CACHE=false
+__NEXT_DISABLE_OVERLAY_WARNING=true
+
+NODE_ENV=development
