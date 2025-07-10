@@ -3,208 +3,168 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAdminAuth } from "@/context/admin-auth-context"
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend, LineChart, Line,
-} from "recharts"
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
+import { BarChart3, TrendingUp, Package, Users, Calendar, Download } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function AdminAnalyticsPage() {
   const { admin, isLoading } = useAdminAuth()
   const router = useRouter()
   const [analytics, setAnalytics] = useState({
-    dailyBookings: [],
-    cityStats: [],
-    statusDistribution: [],
-    revenueData: [],
-    loading: true
+    totalBookings: 1234,
+    totalRevenue: 450000,
+    deliveryRate: 95.2,
+    avgDeliveryTime: 2.3,
+    monthlyGrowth: 12.5,
+    topRoutes: [
+      { route: 'Mumbai  Delhi', count: 156, revenue: 78000 },
+      { route: 'Bangalore  Chennai', count: 134, revenue: 67000 },
+      { route: 'Pune  Mumbai', count: 98, revenue: 49000 }
+    ],
+    recentStats: [
+      { month: 'Jan', bookings: 850, revenue: 34000 },
+      { month: 'Feb', bookings: 920, revenue: 38000 },
+      { month: 'Mar', bookings: 1100, revenue: 45000 },
+      { month: 'Apr', bookings: 1050, revenue: 42000 },
+      { month: 'May', bookings: 1200, revenue: 48000 },
+      { month: 'Jun', bookings: 1350, revenue: 54000 }
+    ]
   })
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!admin) {
-        router.push("/admin/login")
-      } else {
-        fetchAnalytics()
-      }
+    if (!isLoading && !admin) {
+      router.push("/admin/login")
     }
   }, [admin, isLoading, router])
 
-  const fetchAnalytics = async () => {
-    try {
-      const response = await fetch('/api/admin/analytics')
-      const data = await response.json()
-      
-      setAnalytics({
-        dailyBookings: data.dailyBookings || [],
-        cityStats: data.cityStats || [],
-        statusDistribution: data.statusDistribution || [],
-        revenueData: data.revenueData || [],
-        loading: false
-      })
-    } catch (error) {
-      console.error('Failed to fetch analytics:', error)
-      setAnalytics(prev => ({ ...prev, loading: false }))
-    }
-  }
-
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     )
   }
 
-  if (!admin) return null
+  if (!admin) {
+    return null
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-            <p className="text-gray-600 mt-2">Business insights and performance metrics</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics Dashboard</h1>
+            <p className="text-gray-600">Business insights and performance metrics</p>
           </div>
-          <div className="flex space-x-4">
-            <button
-              onClick={() => router.push('/admin/analytics/advanced')}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Advanced Analytics
-            </button>
-            <button
-              onClick={() => router.push('/admin/dashboard')}
-              className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Back to Dashboard
-            </button>
-          </div>
+          <Button className="flex items-center space-x-2">
+            <Download className="h-4 w-4" />
+            <span>Export Report</span>
+          </Button>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <span className="text-2xl"></span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Total Bookings</p>
-                <p className="text-2xl font-bold text-gray-900">1,234</p>
-              </div>
-            </div>
-          </div>
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analytics.totalBookings.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">
+                +{analytics.monthlyGrowth}% from last month
+              </p>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-2xl"></span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">₹2.5L</p>
-              </div>
-            </div>
-          </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">₹{(analytics.totalRevenue / 1000).toFixed(0)}K</div>
+              <p className="text-xs text-muted-foreground">
+                +15.2% from last month
+              </p>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <span className="text-2xl"></span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">In Transit</p>
-                <p className="text-2xl font-bold text-gray-900">89</p>
-              </div>
-            </div>
-          </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Delivery Rate</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analytics.deliveryRate}%</div>
+              <p className="text-xs text-muted-foreground">
+                +2.1% from last month
+              </p>
+            </CardContent>
+          </Card>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <span className="text-2xl"></span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm text-gray-600">Delivered</p>
-                <p className="text-2xl font-bold text-gray-900">1,089</p>
-              </div>
-            </div>
-          </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg Delivery Time</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{analytics.avgDeliveryTime} days</div>
+              <p className="text-xs text-muted-foreground">
+                -0.3 days from last month
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Daily Bookings Chart */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold mb-4">Daily Bookings Trend</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={analytics.dailyBookings}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="bookings" stroke="#8884d8" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+        {/* Top Routes */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Top Routes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {analytics.topRoutes.map((route, index) => (
+                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-blue-600">{index + 1}</span>
+                    </div>
+                    <div>
+                      <div className="font-medium">{route.route}</div>
+                      <div className="text-sm text-gray-500">{route.count} bookings</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium">₹{route.revenue.toLocaleString()}</div>
+                    <div className="text-sm text-gray-500">Revenue</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* City-wise Distribution */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold mb-4">Top Cities</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={analytics.cityStats}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="city" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="bookings" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Status Distribution */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold mb-4">Shipment Status Distribution</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={analytics.statusDistribution}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {analytics.statusDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Revenue Chart */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold mb-4">Monthly Revenue</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={analytics.revenueData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="revenue" fill="#00C49F" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        {/* Monthly Stats */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Monthly Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {analytics.recentStats.map((stat, index) => (
+                <div key={index} className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg">
+                  <div className="text-lg font-semibold text-blue-900">{stat.month}</div>
+                  <div className="text-2xl font-bold text-blue-800">{stat.bookings}</div>
+                  <div className="text-sm text-blue-600">Bookings</div>
+                  <div className="text-lg font-medium text-blue-700 mt-2">₹{stat.revenue.toLocaleString()}</div>
+                  <div className="text-sm text-blue-600">Revenue</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

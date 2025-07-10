@@ -1,33 +1,38 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { connectToDatabase } from "@/lib/mongodb"
 import bcrypt from "bcryptjs"
-import { DefaultSession, DefaultUser } from "next-auth"
-import { JWT, DefaultJWT } from "next-auth/jwt"
+import { connectToDatabase } from "@/lib/mongodb"
+import { DefaultSession } from "next-auth"
+import { JWT } from "next-auth/jwt"
 import { AuthOptions } from "next-auth"
 
+// Extend the built-in session types for NextAuth only
 declare module "next-auth" {
   interface Session {
     user: {
       id: string
-      role?: string
+      name: string
+      email: string
+      userRole?: string
     } & DefaultSession["user"]
   }
 
-  interface User extends DefaultUser {
+  interface User {
     id: string
-    role?: string
+    name: string
+    email: string
+    userRole?: string
   }
 }
 
 declare module "next-auth/jwt" {
-  interface JWT extends DefaultJWT {
+  interface JWT {
     id: string
-    role?: string
+    userRole?: string
   }
 }
 
-export const authOptions: AuthOptions = {
+const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -35,79 +40,71 @@ export const authOptions: AuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" }
       },
-      async authorize(credentials) {
+      async authorize(credentials: any) {
         if (!credentials?.email || !credentials?.password) {
-          console.log("❌ Missing credentials")
           return null
         }
 
         try {
-          console.log("🔍 Trying to authenticate:", credentials.email)
           const { db } = await connectToDatabase()
           
-          // Find user by email
-          const user = await db.collection("users").findOne({
-            email: credentials.email.toLowerCase()
-          })
-
-          console.log("👤 User found:", user ? `Yes (${user.role})` : "No")
-
+          // Find user in database
+          const user = await db.collection('users').findOne({ email: credentials.email })
+          
           if (!user) {
             return null
           }
 
           // Check password
-          const isValidPassword = await bcrypt.compare(
-            credentials.password,
-            user.password
-          )
-
-          console.log("🔐 Password valid:", isValidPassword)
-
-          if (!isValidPassword) {
+          const isValid = await bcrypt.compare(credentials.password, user.password)
+          
+          if (!isValid) {
             return null
           }
 
-          console.log("✅ Authentication successful for:", user.email)
-
-          // Return user object
           return {
             id: user._id.toString(),
-            email: user.email,
             name: user.name,
-            role: user.role || "user"
+            email: user.email,
+            userRole: user.role || 'user'
           }
         } catch (error) {
-          console.error("❌ Auth error:", error)
+          console.error("Auth error:", error)
           return null
         }
       }
     })
   ],
-  pages: {
-    signIn: "/auth/signin",
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   callbacks: {
-    jwt: async ({ token, user }) => {
+    jwt: async ({ token, user }: { token: JWT; user?: any }) => {
       if (user) {
         token.id = user.id
-        token.role = user.role
+        token.userRole = user.userRole
       }
       return token
     },
-    session: async ({ session, token }) => {
-      if (token) {
-        session.user.id = token.id as string
-        session.user.role = token.role as string
+    session: async ({ session, token }: { session: any; token: JWT }) => {
+      if (session.user) {
+        session.user.id = token.id
+        session.user.userRole = token.userRole
       }
       return session
-    },
+    }
   },
-  session: {
-    strategy: "jwt"
+  pages: {
+    signIn: "/login",
+    error: "/login",
   },
-  secret: process.env.NEXTAUTH_SECRET
+  secret: process.env.NEXTAUTH_SECRET,
 }
 
 const handler = NextAuth(authOptions)
+
 export { handler as GET, handler as POST }

@@ -1,117 +1,53 @@
-﻿import { NextResponse } from 'next/server'
-import { connectToDatabase } from '@/lib/mongodb'
+import { NextRequest, NextResponse } from 'next/server'
 import { generateToken } from '@/lib/auth'
-import { seedAdminUser } from '@/lib/seed-admin'
 import bcrypt from 'bcryptjs'
 
-export async function POST(request: Request) {
+// Force Node.js runtime for JWT operations
+export const runtime = 'nodejs'
+
+export async function POST(request: NextRequest) {
   try {
     const { username, password } = await request.json()
 
-    if (!username || !password) {
-      return NextResponse.json(
-        { message: 'Username and password are required' },
-        { status: 400 }
-      )
+    // Demo credentials - replace with database check
+    const DEMO_ADMIN = {
+      id: '1',
+      username: 'admin',
+      email: 'admin@princeenterprises.com',
+      password: 'admin123',
+      role: 'admin'
     }
 
-    // Seed admin user if it doesn't exist
-    await seedAdminUser()
-
-    // Demo admin credentials - always allow this
-    if (username === 'admin' && password === 'admin123') {
-      const token = generateToken({
-        adminId: '507f1f77bcf86cd799439011',
-        username: 'admin',
-        email: 'admin@princeenterprises.com',
-        role: 'superadmin',
-        type: 'admin'
-      })
-
-      const response = NextResponse.json({
-        success: true,
-        message: 'Login successful',
-        token,
-        admin: {
-          id: '507f1f77bcf86cd799439011',
-          username: 'admin',
-          email: 'admin@princeenterprises.com',
-          role: 'superadmin'
-        }
-      })
-
-      // Set token in cookie
-      response.cookies.set('admin-token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 86400 // 24 hours
-      })
-
-      return response
+    if (username !== DEMO_ADMIN.username) {
+      return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 })
     }
 
-    // Try database lookup for other admins
-    try {
-      const { db } = await connectToDatabase()
-      const admin = await db.collection('admins').findOne({ username })
+    // For demo, simple password check. In production, use bcrypt
+    if (password !== DEMO_ADMIN.password) {
+      return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 })
+    }
 
-      if (!admin) {
-        return NextResponse.json(
-          { message: 'Invalid credentials' },
-          { status: 401 }
-        )
+    // Generate JWT token
+    const tokenPayload = {
+      id: DEMO_ADMIN.id,
+      username: DEMO_ADMIN.username,
+      email: DEMO_ADMIN.email,
+      role: DEMO_ADMIN.role
+    }
+
+    const token = generateToken(tokenPayload)
+
+    return NextResponse.json({
+      token,
+      admin: {
+        id: DEMO_ADMIN.id,
+        username: DEMO_ADMIN.username,
+        email: DEMO_ADMIN.email,
+        role: DEMO_ADMIN.role
       }
-
-      const isValidPassword = await bcrypt.compare(password, admin.password)
-      if (!isValidPassword) {
-        return NextResponse.json(
-          { message: 'Invalid credentials' },
-          { status: 401 }
-        )
-      }
-
-      const token = generateToken({
-        adminId: admin._id.toString(),
-        username: admin.username,
-        email: admin.email,
-        role: admin.role,
-        type: 'admin'
-      })
-
-      const response = NextResponse.json({
-        success: true,
-        message: 'Login successful',
-        token,
-        admin: {
-          id: admin._id.toString(),
-          username: admin.username,
-          email: admin.email,
-          role: admin.role
-        }
-      })
-
-      response.cookies.set('admin-token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 86400
-      })
-
-      return response
-    } catch (dbError) {
-      console.error('Database error:', dbError)
-      return NextResponse.json(
-        { message: 'Invalid credentials' },
-        { status: 401 }
-      )
-    }
-
+    })
   } catch (error) {
     console.error('Login error:', error)
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
   }
 }

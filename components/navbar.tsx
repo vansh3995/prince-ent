@@ -7,7 +7,6 @@ import {
   Menu, 
   X, 
   Truck, 
-  User, 
   LogOut, 
   Settings, 
   BarChart3,
@@ -32,7 +31,7 @@ export default function Navbar() {
   const handleLogout = () => {
     if (admin) {
       adminLogout()
-      router.push('/admin/login')
+      router.push('/')
     } else {
       logout()
       router.push('/')
@@ -276,13 +275,9 @@ function LoginModal({ isOpen, onClose, loginType }: { isOpen: boolean; onClose: 
         onClose()
         router.push('/admin/dashboard')
       } else {
-        const result = await login(email, password, loginType)
-        if (result.success) {
-          onClose()
-          router.push('/dashboard')
-        } else {
-          setError(result.message || 'Login failed')
-        }
+        await login(email, password)
+        onClose()
+        router.push('/dashboard')
       }
     } catch (error: any) {
       console.error('Login error:', error)
@@ -383,13 +378,13 @@ function LoginModal({ isOpen, onClose, loginType }: { isOpen: boolean; onClose: 
           <p>Demo Credentials:</p>
           {loginType === 'admin' ? (
             <>
-              <p>Username: admin</p>
-              <p>Password: admin123</p>
+              <p><strong>Username:</strong> admin</p>
+              <p><strong>Password:</strong> admin123</p>
             </>
           ) : (
             <>
-              <p>Email: user@example.com</p>
-              <p>Password: user123</p>
+              <p><strong>Email:</strong> user@example.com</p>
+              <p><strong>Password:</strong> user123</p>
             </>
           )}
         </div>
@@ -415,6 +410,11 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
 
     if (password !== confirmPassword) {
       setError('Passwords do not match')
+      return
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long')
       return
     }
 
@@ -491,8 +491,9 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={6}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-              placeholder="Create a password"
+              placeholder="Create a password (min 6 chars)"
             />
           </div>
 
@@ -503,6 +504,7 @@ function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
+              minLength={6}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
               placeholder="Confirm your password"
             />

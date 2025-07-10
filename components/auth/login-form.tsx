@@ -1,26 +1,20 @@
-"use client"
+﻿"use client"
 
-import React, { useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { useAuth } from "@/context/auth-context"
-import { AlertCircle, Loader2 } from "lucide-react"
-import Link from "next/link"
-
-type LoginResult = {
-  success: boolean
-  message: string
-}
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { AlertCircle, User, Mail, Lock, Eye, EyeOff } from "lucide-react"
 
 export default function LoginForm() {
-  const [email, setEmail] = useState<string>("")
-  const [password, setPassword] = useState<string>("")
-  const [isLoading, setIsLoading] = useState<boolean>(false)
-  const [error, setError] = useState<string>("")
-  const { login } = useAuth() as { login: (email: string, password: string) => Promise<LoginResult> }
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  
+  const { login } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -30,84 +24,110 @@ export default function LoginForm() {
 
     try {
       const result = await login(email, password)
-      
       if (result.success) {
         router.push("/dashboard")
       } else {
-        setError(result.message)
+        setError(result.message || "Login failed")
       }
-    } catch (error) {
-      setError("Something went wrong. Please try again.")
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(error.message)
+      } else {
+        setError("Login failed")
+      }
+    } finally {
+      setIsLoading(false)
     }
-    
-    setIsLoading(false)
   }
 
   return (
-    <Card>
-      <form onSubmit={handleSubmit}>
-        <CardContent className="pt-6 space-y-4">
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <User className="w-5 h-5" />
+          <span>Login</span>
+        </CardTitle>
+        <CardDescription>
+          Enter your credentials to access your account
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start">
-              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-              <span>{error}</span>
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded flex items-center">
+              <AlertCircle className="w-4 h-4 mr-2" />
+              {error}
             </div>
           )}
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <Label htmlFor="password">Password</Label>
-              <Link href="/forgot-password" className="text-sm text-red-600 hover:underline">
-                Forgot password?
-              </Link>
-            </div>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="flex items-center space-x-2">
+          
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <Mail className="inline w-4 h-4 mr-1" />
+              Email Address
+            </label>
             <input
-              type="checkbox"
-              id="remember"
-              className="rounded text-red-600 focus:ring-red-600"
-              title="Remember me"
+              id="email"
+              name="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="user@test.com"
             />
-            <Label htmlFor="remember" className="text-sm cursor-pointer">
-              Remember me
-            </Label>
           </div>
-        </CardContent>
 
-        <CardFooter>
-          <Button type="submit" className="w-full bg-red-600 hover:bg-red-700" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in...
-              </>
-            ) : (
-              "Login"
-            )}
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <Lock className="inline w-4 h-4 mr-1" />
+              Password
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4 text-gray-400" />
+                ) : (
+                  <Eye className="w-4 h-4 text-gray-400" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-blue-600 hover:bg-blue-700"
+          >
+            {isLoading ? "Signing in..." : "Sign in"}
           </Button>
-        </CardFooter>
-      </form>
+
+          <div className="text-center">
+            <p className="text-sm text-gray-600">
+              Demo credentials: user@test.com / password
+            </p>
+            <p className="text-sm text-gray-600 mt-2">
+              Don\'t have an account?{" "}
+              <a href="/register" className="text-blue-600 hover:text-blue-500">
+                Sign up here
+              </a>
+            </p>
+          </div>
+        </form>
+      </CardContent>
     </Card>
   )
 }

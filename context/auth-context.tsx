@@ -1,19 +1,27 @@
 ﻿"use client"
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, ReactNode } from "react"
 
 interface User {
   id: string
   name: string
   email: string
-  role: 'user'
+  role: string
+}
+
+interface LoginResult {
+  success: boolean
+  message?: string
+  user?: User
+  token?: string
 }
 
 interface AuthContextType {
   user: User | null
+  token: string | null
   isLoading: boolean
-  login: (email: string, password: string, type: string) => Promise<{ success: boolean; message?: string }>
-  register: (name: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>
+  login: (email: string, password: string) => Promise<LoginResult>
+  register: (name: string, email: string, password: string) => Promise<LoginResult>
   logout: () => void
 }
 
@@ -21,110 +29,79 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [token, setToken] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  const checkAuth = async () => {
+  const login = async (email: string, password: string): Promise<LoginResult> => {
+    setIsLoading(true)
     try {
-      if (typeof window === 'undefined') {
-        setIsLoading(false)
-        return
-      }
-
-      const token = localStorage.getItem('userToken')
-      if (!token) {
-        setIsLoading(false)
-        return
-      }
-
-      const response = await fetch('/api/auth/verify', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+      // Demo credentials for testing
+      if (email === "user@test.com" && password === "password") {
+        const mockUser: User = {
+          id: "1",
+          name: "Test User",
+          email: email,
+          role: "user"
         }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.user) {
-          setUser(data.user)
-        } else {
-          localStorage.removeItem('userToken')
-        }
+        const mockToken = "demo-token-" + Date.now()
+        
+        setUser(mockUser)
+        setToken(mockToken)
+        
+        // Store in localStorage for persistence
+        localStorage.setItem("authToken", mockToken)
+        localStorage.setItem("user", JSON.stringify(mockUser))
+        
+        return { success: true, message: "Logged in successfully", user: mockUser, token: mockToken }
       } else {
-        localStorage.removeItem('userToken')
+        return { success: false, message: "Invalid email or password" }
       }
     } catch (error) {
-      console.error('Auth check failed:', error)
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('userToken')
-      }
-    }
-    
-    setIsLoading(false)
-  }
-
-  const login = async (email: string, password: string, type: string) => {
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, type }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok && data.success) {
-        localStorage.setItem('userToken', data.token)
-        setUser(data.user)
-        return { success: true }
-      } else {
-        return { success: false, message: data.message || 'Login failed' }
-      }
-    } catch (error) {
-      return { success: false, message: 'Login failed' }
+      return { success: false, message: "Login failed" }
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string): Promise<LoginResult> => {
+    setIsLoading(true)
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, password }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok && data.success) {
-        localStorage.setItem('userToken', data.token)
-        setUser(data.user)
-        return { success: true }
-      } else {
-        return { success: false, message: data.message || 'Registration failed' }
+      // Mock registration
+      const mockUser: User = {
+        id: Date.now().toString(),
+        name: name,
+        email: email,
+        role: "user"
       }
+      const mockToken = "demo-token-" + Date.now()
+      
+      setUser(mockUser)
+      setToken(mockToken)
+      
+      // Store in localStorage for persistence
+      localStorage.setItem("authToken", mockToken)
+      localStorage.setItem("user", JSON.stringify(mockUser))
+      
+      return { success: true, message: "Registered successfully", user: mockUser, token: mockToken }
     } catch (error) {
-      return { success: false, message: 'Registration failed' }
+      return { success: false, message: "Registration failed" }
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const logout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('userToken')
-    }
     setUser(null)
+    setToken(null)
+    localStorage.removeItem("authToken")
+    localStorage.removeItem("user")
+    console.log("Logged out")
   }
 
   return (
     <AuthContext.Provider value={{
       user,
+      token,
       isLoading,
       login,
       register,
@@ -138,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
+    throw new Error("useAuth must be used within an AuthProvider")
   }
   return context
 }

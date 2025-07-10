@@ -1,45 +1,41 @@
-﻿import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { verifyToken } from '@/lib/auth'
+﻿import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  
+  // Skip middleware for static files, API routes, and auth pages
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/static") ||
+    pathname.includes(".") ||
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/admin/login" ||
+    pathname === "/"
+  ) {
+    return NextResponse.next()
+  }
 
-  // Protect admin routes
-  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
-    const token = request.cookies.get('admin-token')?.value
+  // Check for auth token for protected routes
+  const token = request.cookies.get("authToken")?.value || 
+                request.headers.get("authorization")?.replace("Bearer ", "")
 
+  // Protected user routes
+  if (pathname.startsWith("/dashboard") || pathname.startsWith("/booking")) {
     if (!token) {
-      return NextResponse.redirect(new URL('/admin/login', request.url))
-    }
-
-    try {
-      const payload = verifyToken(token)
-      
-      if (!payload || payload.type !== 'admin') {
-        return NextResponse.redirect(new URL('/admin/login', request.url))
-      }
-    } catch (error) {
-      return NextResponse.redirect(new URL('/admin/login', request.url))
+      return NextResponse.redirect(new URL("/login", request.url))
     }
   }
 
-  // Protect user dashboard
-  if (pathname.startsWith('/dashboard') && !pathname.startsWith('/admin')) {
-    const token = request.cookies.get('auth-token')?.value
-
-    if (!token) {
-      return NextResponse.redirect(new URL('/', request.url))
-    }
-
-    try {
-      const payload = verifyToken(token)
-      
-      if (!payload || payload.type !== 'user') {
-        return NextResponse.redirect(new URL('/', request.url))
-      }
-    } catch (error) {
-      return NextResponse.redirect(new URL('/', request.url))
+  // Protected admin routes
+  if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
+    const adminToken = request.cookies.get("adminToken")?.value || 
+                      request.headers.get("authorization")?.replace("Bearer ", "")
+    
+    if (!adminToken) {
+      return NextResponse.redirect(new URL("/admin/login", request.url))
     }
   }
 
@@ -48,7 +44,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/admin/:path*',
-    '/dashboard/:path*'
-  ]
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+  ],
 }

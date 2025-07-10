@@ -1,15 +1,16 @@
-﻿import './globals.css'
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import { AuthProvider } from '@/context/auth-context'
-import { AdminAuthProvider } from '@/context/admin-auth-context'
-import Navbar from '@/components/navbar'
+﻿import type { Metadata } from "next"
+import { Inter } from "next/font/google"
+import "./globals.css"
+import { AuthProvider } from "@/context/auth-context"
+import { AdminAuthProvider } from "@/context/admin-auth-context"
+import Navbar from "@/components/navbar"
+import Footer from "@/components/footer"
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: 'Prince Enterprises - Logistics & Transportation',
-  description: 'Professional logistics and transportation services',
+  title: "Prince Enterprises - Logistics Management",
+  description: "Professional logistics and shipping services",
 }
 
 export default function RootLayout({
@@ -22,8 +23,13 @@ export default function RootLayout({
       <body className={inter.className}>
         <AuthProvider>
           <AdminAuthProvider>
-            <Navbar />
-            {children}
+            <div className="flex flex-col min-h-screen">
+              <Navbar />
+              <main className="flex-1">
+                {children}
+              </main>
+              <Footer />
+            </div>
           </AdminAuthProvider>
         </AuthProvider>
       </body>

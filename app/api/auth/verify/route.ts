@@ -1,9 +1,10 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken, getTokenFromRequest } from '@/lib/auth'
+import { verifyToken } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request)
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null
 
     if (!token) {
       return NextResponse.json(

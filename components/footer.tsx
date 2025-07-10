@@ -1,30 +1,34 @@
-import Link from 'next/link'
-import { Truck, Mail, Phone, MapPin } from 'lucide-react'
+import Link from "next/link"
+import { Truck, Phone, Mail, MapPin, Facebook, Twitter, Instagram, Linkedin } from "lucide-react"
 
 export default function Footer() {
   return (
     <footer className="bg-gray-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
-          <div className="col-span-1 md:col-span-2">
+          <div>
             <div className="flex items-center space-x-2 mb-4">
-              <Truck className="h-8 w-8 text-blue-400" />
+              <Truck className="h-8 w-8 text-red-600" />
               <span className="text-xl font-bold">Prince Enterprises</span>
             </div>
             <p className="text-gray-400 mb-4">
-              Your trusted partner in logistics and transportation services across the nation.
-              We provide reliable, efficient, and cost-effective solutions for all your shipping needs.
+              Your trusted logistics partner delivering excellence across the nation with reliable,
+              fast, and secure transportation services.
             </p>
             <div className="flex space-x-4">
-              <div className="flex items-center text-gray-400">
-                <Phone className="h-4 w-4 mr-2" />
-                <span>+91 9876543210</span>
-              </div>
-              <div className="flex items-center text-gray-400">
-                <Mail className="h-4 w-4 mr-2" />
-                <span>info@princeenterprises.com</span>
-              </div>
+              <Link href="#" className="text-gray-400 hover:text-white transition-colors">
+                <Facebook className="h-5 w-5" />
+              </Link>
+              <Link href="#" className="text-gray-400 hover:text-white transition-colors">
+                <Twitter className="h-5 w-5" />
+              </Link>
+              <Link href="#" className="text-gray-400 hover:text-white transition-colors">
+                <Instagram className="h-5 w-5" />
+              </Link>
+              <Link href="#" className="text-gray-400 hover:text-white transition-colors">
+                <Linkedin className="h-5 w-5" />
+              </Link>
             </div>
           </div>
 
@@ -33,13 +37,13 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/" className="text-gray-400 hover:text-white transition-colors">
-                  Home
+                <Link href="/about" className="text-gray-400 hover:text-white transition-colors">
+                  About Us
                 </Link>
               </li>
               <li>
                 <Link href="/services" className="text-gray-400 hover:text-white transition-colors">
-                  Services
+                  Our Services
                 </Link>
               </li>
               <li>
@@ -48,8 +52,18 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/booking" className="text-gray-400 hover:text-white transition-colors">
+                  Book Shipment
+                </Link>
+              </li>
+              <li>
+                <Link href="/quote" className="text-gray-400 hover:text-white transition-colors">
+                  Get Quote
+                </Link>
+              </li>
+              <li>
                 <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">
-                  Contact
+                  Contact Us
                 </Link>
               </li>
             </ul>
@@ -60,23 +74,87 @@ export default function Footer() {
             <h3 className="text-lg font-semibold mb-4">Services</h3>
             <ul className="space-y-2">
               <li>
-                <span className="text-gray-400">Freight Transport</span>
+                <Link href="/services#express" className="text-gray-400 hover:text-white transition-colors">
+                  Express Delivery
+                </Link>
               </li>
               <li>
-                <span className="text-gray-400">Express Delivery</span>
+                <Link href="/services#freight" className="text-gray-400 hover:text-white transition-colors">
+                  Freight Services
+                </Link>
               </li>
               <li>
-                <span className="text-gray-400">Warehousing</span>
+                <Link href="/services#network" className="text-gray-400 hover:text-white transition-colors">
+                  Nationwide Network
+                </Link>
               </li>
               <li>
-                <span className="text-gray-400">Supply Chain</span>
+                <Link href="/services#tracking" className="text-gray-400 hover:text-white transition-colors">
+                  Real-time Tracking
+                </Link>
+              </li>
+              <li>
+                <Link href="/services#documentation" className="text-gray-400 hover:text-white transition-colors">
+                  Documentation
+                </Link>
+              </li>
+              <li>
+                <Link href="/services#support" className="text-gray-400 hover:text-white transition-colors">
+                  24/7 Support
+                </Link>
               </li>
             </ul>
           </div>
+
+          {/* Contact Info */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
+            <div className="space-y-3">
+              <div className="flex items-start space-x-3">
+                <MapPin className="h-5 w-5 text-red-600 mt-1" />
+                <div className="text-gray-400">
+                  <p>123 Business Park</p>
+                  <p>Sector 18, Noida</p>
+                  <p>Uttar Pradesh - 201301</p>
+                  <p>India</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Phone className="h-5 w-5 text-red-600" />
+                <div className="text-gray-400">
+                  <p>+91 9876543210</p>
+                  <p>+91 9876543211</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Mail className="h-5 w-5 text-red-600" />
+                <div className="text-gray-400">
+                  <p>info@princeenterprises.com</p>
+                  <p>support@princeenterprises.com</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 Prince Enterprises. All rights reserved.</p>
+        {/* Bottom Bar */}
+        <div className="border-t border-gray-800 mt-8 pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="text-gray-400 text-sm mb-4 md:mb-0">
+              © {new Date().getFullYear()} Prince Enterprises. All rights reserved.
+            </div>
+            <div className="flex space-x-6 text-sm">
+              <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">
+                Privacy Policy
+              </Link>
+              <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">
+                Terms of Service
+              </Link>
+              <Link href="/refund" className="text-gray-400 hover:text-white transition-colors">
+                Refund Policy
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </footer>

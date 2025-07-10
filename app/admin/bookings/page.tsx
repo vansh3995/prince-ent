@@ -1,500 +1,235 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import toast, { Toaster } from "react-hot-toast"
 import { useAdminAuth } from "@/context/admin-auth-context"
-
-const STATUS_OPTIONS = ["pending", "confirmed", "picked_up", "in_transit", "out_for_delivery", "delivered", "cancelled"]
+import { Package, Search, Filter, Eye, Edit } from "lucide-react"
 
 interface Booking {
-  _id: string
+  id: string
   awb: string
-  bookingId: string
+  customerName: string
+  customerEmail: string
+  from: string
+  to: string
   serviceType: string
   packageType: string
-  weight: string
-  value: string
-  description: string
+  weight: number
   status: string
-  pickup: {
-    name: string
-    phone: string
-    address: string
-    city: string
-    state: string
-    pincode: string
-    email?: string
-    date?: string
-  }
-  delivery: {
-    name: string
-    phone: string
-    address: string
-    city: string
-    state: string
-    pincode: string
-    email?: string
-  }
-  dimensions?: {
-    length: string
-    width: string
-    height: string
-  }
-  userId?: string
   createdAt: string
-  updatedAt: string
+  value: number
 }
 
 export default function AdminBookingsPage() {
-  const { user, isAuthenticated } = useAdminAuth()
-
-  // Allowed roles for booking page access
-  const allowedRoles = ['user', 'admin', 'superadmin']
+  const { admin, isLoading } = useAdminAuth()
   const router = useRouter()
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState("")
-  const [filterStatus, setFilterStatus] = useState("")
-  const [page, setPage] = useState(1)
-  const [total, setTotal] = useState(0)
-  const [fromDate, setFromDate] = useState("")
-  const [toDate, setToDate] = useState("")
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null)
-  const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const limit = 10
-  const role = user?.role
-
-  const fetchBookings = useCallback(async () => {
-    setLoading(true)
-    try {
-      const token = localStorage.getItem('admin-token')
-      const res = await fetch(`/api/bookings?page=${page}&limit=${limit}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      const data = await res.json()
-      
-      if (data.success) {
-        setBookings(data.bookings || [])
-        setTotal(data.total || 0)
-      } else {
-        console.error('Failed to fetch bookings:', data.message)
-        toast.error('Failed to fetch bookings')
-      }
-    } catch (error) {
-      console.error('Fetch error:', error)
-      toast.error('Failed to fetch bookings')
-    }
-    setLoading(false)
-  }, [page, limit])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filterStatus, setFilterStatus] = useState("all")
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !admin) {
       router.push("/admin/login")
     }
-    // Redirect if user role is not allowed
-    else if (isAuthenticated && !allowedRoles.includes(user?.role || '')) {
-      router.push("/admin/login")
-    }
-    else if (isAuthenticated) {
+  }, [admin, isLoading, router])
+
+  useEffect(() => {
+    if (admin) {
       fetchBookings()
     }
-  }, [isAuthenticated, user, page, router, fetchBookings])
+  }, [admin])
 
-  // Filter and search logic
-  const filteredBookings = bookings.filter((booking) => {
-    const matchesSearch =
-      search === "" ||
-      booking.pickup?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      booking.delivery?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      booking.pickup?.city?.toLowerCase().includes(search.toLowerCase()) ||
-      booking.delivery?.city?.toLowerCase().includes(search.toLowerCase()) ||
-      booking.awb?.toLowerCase().includes(search.toLowerCase()) ||
-      booking.bookingId?.toLowerCase().includes(search.toLowerCase())
-      
-    const matchesStatus =
-      !filterStatus || booking.status === filterStatus
+  const fetchBookings = async () => {
+    try {
+      const mockBookings: Booking[] = [
+        {
+          id: '1',
+          awb: 'AWB123456789',
+          customerName: 'John Doe',
+          customerEmail: 'john@example.com',
+          from: 'Mumbai',
+          to: 'Delhi',
+          serviceType: 'Express',
+          packageType: 'Document',
+          weight: 0.5,
+          status: 'delivered',
+          createdAt: '2024-12-15T10:30:00Z',
+          value: 1000
+        },
+        {
+          id: '2',
+          awb: 'AWB987654321',
+          customerName: 'Jane Smith',
+          customerEmail: 'jane@example.com',
+          from: 'Bangalore',
+          to: 'Chennai',
+          serviceType: 'Standard',
+          packageType: 'Package',
+          weight: 2.0,
+          status: 'in_transit',
+          createdAt: '2024-12-14T14:15:00Z',
+          value: 2500
+        }
+      ]
+      setBookings(mockBookings)
+      setLoading(false)
+    } catch (error) {
+      console.error('Error fetching bookings:', error)
+      setLoading(false)
+    }
+  }
 
-    // Date filter logic
-    const bookingDate = booking.createdAt ? new Date(booking.createdAt) : null
-    const from = fromDate ? new Date(fromDate) : null
-    const to = toDate ? new Date(toDate) : null
-    const matchesDate =
-      (!from || (bookingDate && bookingDate >= from)) &&
-      (!to || (bookingDate && bookingDate <= to))
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'delivered':
+        return 'bg-green-100 text-green-800'
+      case 'in_transit':
+        return 'bg-blue-100 text-blue-800'
+      case 'picked_up':
+        return 'bg-yellow-100 text-yellow-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
 
-    return matchesSearch && matchesStatus && matchesDate
+  const filteredBookings = bookings.filter(booking => {
+    const matchesSearch = 
+      booking.awb?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.customerEmail?.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesFilter = filterStatus === 'all' || booking.status === filterStatus
+    
+    return matchesSearch && matchesFilter
   })
 
-  // Status update handler
-  const handleStatusChange = async (id: string, newStatus: string) => {
-    if (!window.confirm(`Change status to "${newStatus}"?`)) return
-    try {
-      const res = await fetch(`/api/bookings/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      })
-      if (res.ok) {
-        toast.success("Status updated!")
-        fetchBookings()
-      } else {
-        toast.error("Failed to update status.")
-      }
-    } catch (error) {
-      console.error('Status update error:', error)
-      toast.error("Failed to update status.")
-    }
-  }
-
-  // Delete handler
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this booking?")) return
-    try {
-      const res = await fetch(`/api/bookings/${id}`, { method: "DELETE" })
-      if (res.ok) {
-        toast.success("Booking deleted!")
-        fetchBookings()
-      } else {
-        toast.error("Failed to delete booking.")
-      }
-    } catch (error) {
-      console.error('Delete error:', error)
-      toast.error("Failed to delete booking.")
-    }
-  }
-
-  // CSV Export
-  const exportCSV = () => {
-    const headers = [
-      "AWB,Pickup Name,Delivery Name,Service,Package,Pickup City,Delivery City,Date,Value,Status"
-    ]
-    const rows = filteredBookings.map(b =>
-      [
-        b.awb || b.bookingId || 'N/A',
-        b.pickup?.name || 'N/A',
-        b.delivery?.name || 'N/A',
-        b.serviceType || 'N/A',
-        b.packageType || 'N/A',
-        b.pickup?.city || 'N/A',
-        b.delivery?.city || 'N/A',
-        b.pickup?.date || new Date(b.createdAt).toLocaleDateString(),
-        b.value || 'N/A',
-        b.status || "pending"
-      ].join(",")
+  if (isLoading || loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
     )
-    const csvContent = [headers, ...rows].join("\n")
-    const blob = new Blob([csvContent], { type: "text/csv" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `bookings-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
   }
 
-  // Add driver management
-  const assignDriver = async (bookingId: string, driverId: string) => {
-    await fetch(`/api/bookings/${bookingId}/assign-driver`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ driverId })
-    })
+  if (!admin) {
+    return null
   }
-
-  if (!isAuthenticated) return null
 
   return (
-    <div className="container mx-auto py-8">
-      <Toaster position="top-right" />
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">All Bookings</h1>
-        <div className="text-sm text-gray-600">
-          Role: <span className="font-semibold capitalize">{role || 'admin'}</span>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Bookings Management</h1>
+          <p className="text-gray-600">Manage all customer bookings and shipments</p>
         </div>
-      </div>
-      
-      {/* Search and Filter Controls */}
-      <div className="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-        <input
-          className="border px-3 py-2 rounded w-64"
-          placeholder="Search by name, city, or AWB number"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-        <select
-          className="border px-3 py-2 rounded"
-          value={filterStatus}
-          onChange={e => setFilterStatus(e.target.value)}
-          aria-label="Filter bookings by status"
-        >
-          <option value="">All Statuses</option>
-          {STATUS_OPTIONS.map(status => (
-            <option key={status} value={status}>{status.replace('_', ' ').toUpperCase()}</option>
-          ))}
-        </select>
-        <input
-          type="date"
-          value={fromDate}
-          onChange={e => setFromDate(e.target.value)}
-          className="border px-3 py-2 rounded"
-          placeholder="From Date"
-        />
-        <input
-          type="date"
-          value={toDate}
-          onChange={e => setToDate(e.target.value)}
-          className="border px-3 py-2 rounded"
-          placeholder="To Date"
-        />
-        <button
-          onClick={exportCSV}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-        >
-          Export CSV
-        </button>
-        <button
-          onClick={() => { 
-            setSearch("")
-            setFilterStatus("")
-            setFromDate("")
-            setToDate("")
-            setPage(1)
-          }}
-          className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-        >
-          Clear Filters
-        </button>
-      </div>
 
-      {/* Bulk Actions */}
-      <div className="flex gap-2 mb-4">
-        <button
-          disabled={selectedIds.length === 0}
-          onClick={() => {
-            const newStatus = prompt("Enter new status for selected bookings:")
-            if (newStatus && STATUS_OPTIONS.includes(newStatus.toLowerCase())) {
-              selectedIds.forEach(id => handleStatusChange(id, newStatus.toLowerCase()))
-              setSelectedIds([])
-            } else {
-              toast.error("Invalid status")
-            }
-          }}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-        >
-          Update Status ({selectedIds.length})
-        </button>
-        {role === "superadmin" && (
-          <button
-            disabled={selectedIds.length === 0}
-            onClick={async () => {
-              if (!window.confirm(`Delete ${selectedIds.length} selected bookings?`)) return
-              for (const id of selectedIds) {
-                await fetch(`/api/bookings/${id}`, { method: "DELETE" })
-              }
-              toast.success("Selected bookings deleted!")
-              setSelectedIds([])
-              fetchBookings()
-            }}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
-          >
-            Delete Selected ({selectedIds.length})
-          </button>
-        )}
-      </div>
-
-      {/* Stats */}
-      <div className="mb-4 text-sm text-gray-600">
-        Showing {filteredBookings.length} of {total} bookings
-      </div>
-
-      {/* Bookings List */}
-      {loading ? (
-        <div className="text-center py-8">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p>Loading bookings...</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredBookings.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p>No bookings found matching your criteria.</p>
+        {/* Search and Filter */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <input
+                type="text"
+                placeholder="Search by AWB, name, or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
-          ) : (
-            filteredBookings.map((booking) => (
-              <Card key={booking._id} className="cursor-pointer hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-2">
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.includes(booking._id)}
-                        onChange={e => {
-                          e.stopPropagation()
-                          setSelectedIds(ids =>
-                            e.target.checked
-                              ? [...ids, booking._id]
-                              : ids.filter(id => id !== booking._id)
-                          )
-                        }}
-                        className="mr-2"
-                        title="Select booking"
-                      />
-                  <span
-                    className="font-bold text-blue-600 cursor-pointer underline"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      router.push(`/track?awb=${booking.awb}`)
-                    }}
-                    title="Track this shipment"
-                  >
-                    AWB: {booking.awb || booking.bookingId || 'Not Generated'}
-                  </span>
-                </div>
-                <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                  booking.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                  booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                  booking.status === 'in_transit' ? 'bg-blue-100 text-blue-800' :
-                  'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {booking.status?.replace('_', ' ').toUpperCase() || 'PENDING'}
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent
-              onClick={() => setSelectedBooking(booking)}
-              className="cursor-pointer"
-            >
-                  <p><strong>Service:</strong> {booking.serviceType}</p>
-                  <p><strong>Package:</strong> {booking.packageType}</p>
-                  <p><strong>Pickup:</strong> {booking.pickup?.name} - {booking.pickup?.city}</p>
-                  <p><strong>Delivery:</strong> {booking.delivery?.name} - {booking.delivery?.city}</p>
-                  <p><strong>Date:</strong> {booking.pickup?.date || new Date(booking.createdAt).toLocaleDateString()}</p>
-                  <p><strong>Value:</strong> ₹{booking.value}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <strong>Status:</strong>
-                    <select
-                      className="border px-2 py-1 rounded"
-                      value={booking.status || "pending"}
-                      onClick={e => e.stopPropagation()}
-                      onChange={e => {
-                        e.stopPropagation()
-                        handleStatusChange(booking._id, e.target.value)
-                      }}
-                      aria-label="Update booking status"
-                    >
-                      {STATUS_OPTIONS.map(status => (
-                        <option key={status} value={status}>{status.replace('_', ' ').toUpperCase()}</option>
-                      ))}
-                    </select>
-                    {role === "superadmin" && (
-                      <button
-                        onClick={e => {
-                          e.stopPropagation()
-                          handleDelete(booking._id)
-                        }}
-                        className="ml-4 px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
-      )}
-
-      {/* Pagination Controls */}
-      <div className="flex justify-between items-center mt-6">
-        <p className="text-gray-600">
-          Showing {filteredBookings.length} of {total} bookings
-        </p>
-        <div className="flex gap-2">
-          <button
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <span className="px-3 py-1">Page {page} of {Math.ceil(total / limit)}</span>
-          <button
-            disabled={page >= Math.ceil(total / limit)}
-            onClick={() => setPage(page + 1)}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      </div>
-
-      {/* Booking Details Modal */}
-      {selectedBooking && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-lg relative">
-            <button
-              className="absolute top-4 right-4 text-2xl font-bold text-gray-500 hover:text-gray-700"
-              onClick={() => setSelectedBooking(null)}
-            >
-              ×
-            </button>
-            <h2 className="text-2xl font-bold mb-4">Booking Details</h2>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="space-y-2">
-                <div><strong>AWB Number:</strong> {selectedBooking.awb || selectedBooking.bookingId}</div>
-                <div><strong>Service Type:</strong> {selectedBooking.serviceType}</div>
-                <div><strong>Package Type:</strong> {selectedBooking.packageType}</div>
-                <div><strong>Weight:</strong> {selectedBooking.weight} kg</div>
-                <div><strong>Value:</strong> ₹{selectedBooking.value}</div>
-                <div><strong>Status:</strong> {selectedBooking.status || "Pending"}</div>
-              </div>
-              <div className="space-y-2">
-                <div><strong>Created:</strong> {new Date(selectedBooking.createdAt).toLocaleString()}</div>
-                <div><strong>Description:</strong> {selectedBooking.description}</div>
-                {selectedBooking.dimensions && (
-                  <div><strong>Dimensions:</strong> {selectedBooking.dimensions.length} × {selectedBooking.dimensions.width} × {selectedBooking.dimensions.height} cm</div>
-                )}
-              </div>
-            </div>
-            
-            <div className="mt-6 grid grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-bold text-green-700 mb-2">Pickup Details</h3>
-                <div className="space-y-1 text-sm">
-                  <div><strong>Name:</strong> {selectedBooking.pickup?.name}</div>
-                  <div><strong>Phone:</strong> {selectedBooking.pickup?.phone}</div>
-                  <div><strong>Email:</strong> {selectedBooking.pickup?.email || 'N/A'}</div>
-                  <div><strong>Address:</strong> {selectedBooking.pickup?.address}</div>
-                  <div><strong>City:</strong> {selectedBooking.pickup?.city}</div>
-                  <div><strong>State:</strong> {selectedBooking.pickup?.state}</div>
-                  <div><strong>Pincode:</strong> {selectedBooking.pickup?.pincode}</div>
-                  {selectedBooking.pickup?.date && (
-                    <div><strong>Date:</strong> {selectedBooking.pickup.date}</div>
-                  )}
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="font-bold text-blue-700 mb-2">Delivery Details</h3>
-                <div className="space-y-1 text-sm">
-                  <div><strong>Name:</strong> {selectedBooking.delivery?.name}</div>
-                  <div><strong>Phone:</strong> {selectedBooking.delivery?.phone}</div>
-                  <div><strong>Email:</strong> {selectedBooking.delivery?.email || 'N/A'}</div>
-                  <div><strong>Address:</strong> {selectedBooking.delivery?.address}</div>
-                  <div><strong>City:</strong> {selectedBooking.delivery?.city}</div>
-                  <div><strong>State:</strong> {selectedBooking.delivery?.state}</div>
-                  <div><strong>Pincode:</strong> {selectedBooking.delivery?.pincode}</div>
-                </div>
-              </div>
+            <div>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="picked_up">Picked Up</option>
+                <option value="in_transit">In Transit</option>
+                <option value="delivered">Delivered</option>
+              </select>
             </div>
           </div>
         </div>
-      )}
+
+        {/* Bookings Table */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold">All Bookings ({filteredBookings.length})</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left text-gray-500">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3">AWB</th>
+                  <th className="px-6 py-3">Customer</th>
+                  <th className="px-6 py-3">Route</th>
+                  <th className="px-6 py-3">Service</th>
+                  <th className="px-6 py-3">Weight</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Value</th>
+                  <th className="px-6 py-3">Date</th>
+                  <th className="px-6 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredBookings.map((booking) => (
+                  <tr key={booking.id} className="bg-white border-b hover:bg-gray-50">
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      {booking.awb}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <div className="font-medium">{booking.customerName}</div>
+                        <div className="text-gray-500">{booking.customerEmail}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {booking.from}  {booking.to}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        <div>{booking.serviceType}</div>
+                        <div className="text-gray-500">{booking.packageType}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {booking.weight} kg
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
+                        {booking.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      ?{booking.value}
+                    </td>
+                    <td className="px-6 py-4">
+                      {new Date(booking.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex space-x-2">
+                        <button
+                          className="text-blue-600 hover:text-blue-800"
+                          onClick={() => console.log('View', booking.id)}
+                        >
+                          View
+                        </button>
+                        <button
+                          className="text-green-600 hover:text-green-800"
+                          onClick={() => console.log('Edit', booking.id)}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

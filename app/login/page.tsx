@@ -1,33 +1,29 @@
-import type { Metadata } from "next"
+﻿import type { Metadata, Viewport } from "next"
 import LoginForm from "@/components/auth/login-form"
-import Link from "next/link"
 
 export const metadata: Metadata = {
   title: "Login - Prince Enterprises",
   description: "Login to your Prince Enterprises account",
 }
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+}
+
 export default function LoginPage() {
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-md mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold">Login to Your Account</h1>
-          <p className="text-gray-600 mt-2">
-            Access your Prince Enterprises account to track shipments and manage bookings
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Sign in to your account
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Access your Prince Enterprises dashboard
           </p>
         </div>
-
         <LoginForm />
-
-        <div className="text-center mt-6">
-          <p className="text-gray-600">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="text-red-600 hover:underline font-medium">
-              Register here
-            </Link>
-          </p>
-        </div>
       </div>
     </div>
   )
