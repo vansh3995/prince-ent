@@ -8,21 +8,42 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Package, Truck, MapPin, Bell } from "lucide-react"
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, isLoading, isAuthenticated } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!user) {
-      router.push("/login")
+    console.log("🏠 Dashboard - Auth state:", { 
+      user: user?.email, 
+      isLoading, 
+      isAuthenticated 
+    })
+    
+    // Only redirect if loading is complete and user is not authenticated
+    if (!isLoading && !isAuthenticated) {
+      console.log("🚪 Dashboard - Redirecting to login")
+      router.push("/login?redirect=/dashboard")
     }
-  }, [user, router])
+  }, [isLoading, isAuthenticated, router])
 
-  if (!user) {
+  // Show loading while auth is initializing
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
-          <p>Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show loading while redirecting
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to login...</p>
         </div>
       </div>
     )
@@ -34,7 +55,7 @@ export default function DashboardPage() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600">Welcome back, {user.name}!</p>
+            <p className="text-gray-600">Welcome back, {user?.name}! 👋</p>
           </div>
           <Button onClick={logout} variant="outline">
             Logout
@@ -119,19 +140,23 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Name:</span>
-                  <span className="text-sm">{user.name}</span>
+                  <span className="text-sm">{user?.name}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Email:</span>
-                  <span className="text-sm">{user.email}</span>
+                  <span className="text-sm">{user?.email}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium">Phone:</span>
+                  <span className="text-sm">{user?.phone}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Role:</span>
-                  <span className="text-sm capitalize">{user.role}</span>
+                  <span className="text-sm capitalize">{user?.role || 'User'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm font-medium">Status:</span>
-                  <span className="text-sm text-green-600">Active</span>
+                  <span className="text-sm text-green-600">✅ Active</span>
                 </div>
               </div>
             </CardContent>

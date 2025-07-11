@@ -1,58 +1,77 @@
 ﻿"use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle, User, Mail, Lock, Eye, EyeOff } from "lucide-react"
+import { AlertCircle, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react"
 
 export default function LoginForm() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const { login } = useAuth()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get('redirect') || '/dashboard'
+
+  const [formData, setFormData] = useState({
+    email: "demo@example.com",
+    password: "demo123"
+  })
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  
-  const { login } = useAuth()
-  const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }))
+    // Clear error when user starts typing
+    if (error) setError("")
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setIsLoading(true)
 
     try {
-      const result = await login(email, password)
+      console.log("🔐 Login form submitting:", formData.email)
+      
+      const result = await login(formData.email, formData.password)
+      
+      console.log("🎯 Login result:", result)
+      
       if (result.success) {
-        router.push("/dashboard")
+        console.log("✅ Login successful, redirecting to:", redirectTo)
+        // Small delay to ensure state is updated
+        setTimeout(() => {
+          router.push(redirectTo)
+          router.refresh()
+        }, 100)
       } else {
         setError(result.message || "Login failed")
       }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        setError(error.message)
-      } else {
-        setError("Login failed")
-      }
+    } catch (error) {
+      console.error("❌ Login error:", error)
+      setError("Login failed. Please try again.")
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <Card className="w-full">
+    <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <User className="w-5 h-5" />
-          <span>Login</span>
-        </CardTitle>
-        <CardDescription>
+        <CardTitle className="text-2xl text-center">Sign In</CardTitle>
+        <CardDescription className="text-center">
           Enter your credentials to access your account
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded flex items-center">
               <AlertCircle className="w-4 h-4 mr-2" />
@@ -60,71 +79,69 @@ export default function LoginForm() {
             </div>
           )}
           
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              <Mail className="inline w-4 h-4 mr-1" />
+          <div className="space-y-2">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               Email Address
             </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="user@test.com"
-            />
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="pl-10"
+                placeholder="Enter your email"
+                disabled={isLoading}
+                required
+              />
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              <Lock className="inline w-4 h-4 mr-1" />
+          <div className="space-y-2">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Password
             </label>
             <div className="relative">
-              <input
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
                 id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={handleChange}
+                className="pl-10 pr-10"
+                placeholder="Enter your password"
+                disabled={isLoading}
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                disabled={isLoading}
               >
-                {showPassword ? (
-                  <EyeOff className="w-4 h-4 text-gray-400" />
-                ) : (
-                  <Eye className="w-4 h-4 text-gray-400" />
-                )}
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           </div>
 
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-700"
-          >
-            {isLoading ? "Signing in..." : "Sign in"}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <div className="flex items-center justify-center space-x-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Signing in...</span>
+              </div>
+            ) : (
+              "Sign In"
+            )}
           </Button>
 
-          <div className="text-center">
-            <p className="text-sm text-gray-600">
-              Demo credentials: user@test.com / password
-            </p>
-            <p className="text-sm text-gray-600 mt-2">
-              Don\'t have an account?{" "}
-              <a href="/register" className="text-blue-600 hover:text-blue-500">
-                Sign up here
-              </a>
-            </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+            <p className="text-sm text-blue-800 font-medium mb-2">Demo Credentials:</p>
+            <p className="text-sm text-blue-700">📧 Email: demo@example.com</p>
+            <p className="text-sm text-blue-700">🔐 Password: demo123</p>
           </div>
         </form>
       </CardContent>

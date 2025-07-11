@@ -1,524 +1,251 @@
 ﻿"use client"
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { useRouter, usePathname } from 'next/navigation'
-import { 
-  Menu, 
-  X, 
-  Truck, 
-  LogOut, 
-  Settings, 
-  BarChart3,
-  UserPlus,
-  LogIn
-} from 'lucide-react'
-import { useAuth } from '@/context/auth-context'
-import { useAdminAuth } from '@/context/admin-auth-context'
-import { Button } from '@/components/ui/button'
+import { useState } from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Menu, X, Truck, User, Settings, LogOut } from "lucide-react"
+import { useAuth } from "@/context/auth-context"
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
-  const [showLoginModal, setShowLoginModal] = useState(false)
-  const [showRegisterModal, setShowRegisterModal] = useState(false)
-  const [loginType, setLoginType] = useState<'admin' | 'user'>('user')
-  
-  const { user, logout } = useAuth()
-  const { admin, logout: adminLogout } = useAdminAuth()
-  const router = useRouter()
   const pathname = usePathname()
+  const { user, logout } = useAuth()
+
+  const isActive = (path: string) => pathname === path
 
   const handleLogout = () => {
-    if (admin) {
-      adminLogout()
-      router.push('/')
-    } else {
-      logout()
-      router.push('/')
-    }
-    setIsOpen(false)
-  }
-
-  const handleDashboard = () => {
-    if (admin) {
-      router.push('/admin/dashboard')
-    } else {
-      router.push('/dashboard')
-    }
-    setIsOpen(false)
-  }
-
-  const openAdminLogin = () => {
-    setLoginType('admin')
-    setShowLoginModal(true)
-    setIsOpen(false)
-  }
-
-  const openUserLogin = () => {
-    setLoginType('user')
-    setShowLoginModal(true)
-    setIsOpen(false)
-  }
-
-  const openRegister = () => {
-    setShowRegisterModal(true)
+    logout()
     setIsOpen(false)
   }
 
   return (
-    <>
-      <nav className="bg-white shadow-lg sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center space-x-2">
-                <Truck className="h-8 w-8 text-red-600" />
-                <span className="text-xl font-bold text-gray-900">Prince Enterprises</span>
-              </Link>
-            </div>
+    <nav className="bg-white shadow-lg sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center space-x-2">
+              <Truck className="h-8 w-8 text-red-600" />
+              <span className="text-xl font-bold text-gray-900">Prince Enterprises</span>
+            </Link>
+          </div>
 
-            <div className="hidden md:flex items-center space-x-8">
-              <Link 
-                href="/" 
-                className={`${pathname === '/' ? 'text-red-600' : 'text-gray-700'} hover:text-red-600 transition-colors`}
-              >
-                Home
-              </Link>
-              <Link 
-                href="/services" 
-                className={`${pathname === '/services' ? 'text-red-600' : 'text-gray-700'} hover:text-red-600 transition-colors`}
-              >
-                Services
-              </Link>
-              <Link 
-                href="/track" 
-                className={`${pathname === '/track' ? 'text-red-600' : 'text-gray-700'} hover:text-red-600 transition-colors`}
-              >
-                Track
-              </Link>
-              <Link 
-                href="/booking" 
-                className={`${pathname === '/booking' ? 'text-red-600' : 'text-gray-700'} hover:text-red-600 transition-colors`}
-              >
-                Book Now
-              </Link>
-              <Link 
-                href="/contact" 
-                className={`${pathname === '/contact' ? 'text-red-600' : 'text-gray-700'} hover:text-red-600 transition-colors`}
-              >
-                Contact
-              </Link>
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            <Link
+              href="/"
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                isActive('/') 
+                  ? 'text-red-600 border-b-2 border-red-600' 
+                  : 'text-gray-700 hover:text-red-600'
+              }`}
+            >
+              Home
+            </Link>
+            <Link
+              href="/about"
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                isActive('/about') 
+                  ? 'text-red-600 border-b-2 border-red-600' 
+                  : 'text-gray-700 hover:text-red-600'
+              }`}
+            >
+              About
+            </Link>
+            <Link
+              href="/track"
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                isActive('/track') 
+                  ? 'text-red-600 border-b-2 border-red-600' 
+                  : 'text-gray-700 hover:text-red-600'
+              }`}
+            >
+              Track
+            </Link>
+            <Link
+              href="/booking"
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                isActive('/booking') 
+                  ? 'text-red-600 border-b-2 border-red-600' 
+                  : 'text-gray-700 hover:text-red-600'
+              }`}
+            >
+              Booking
+            </Link>
+            <Link
+              href="/contact"
+              className={`px-3 py-2 text-sm font-medium transition-colors ${
+                isActive('/contact') 
+                  ? 'text-red-600 border-b-2 border-red-600' 
+                  : 'text-gray-700 hover:text-red-600'
+              }`}
+            >
+              Contact
+            </Link>
+          </div>
 
-              {(user || admin) ? (
-                <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-600">
-                    Welcome, <span className="font-semibold">{admin?.username || user?.name}</span>
-                  </span>
-                  <Button 
-                    onClick={handleDashboard}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center space-x-1"
-                  >
-                    <BarChart3 className="h-4 w-4" />
-                    <span>{admin ? 'Admin Panel' : 'Dashboard'}</span>
+          {/* Desktop Auth Section */}
+          <div className="hidden md:flex items-center space-x-4">
+            {user ? (
+              <div className="flex items-center space-x-2">
+                <Link href="/dashboard">
+                  <Button variant="outline" size="sm">
+                    <User className="w-4 h-4 mr-2" />
+                    Dashboard
                   </Button>
-                  <Button 
+                </Link>
+                <Button onClick={handleLogout} variant="outline" size="sm">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Link href="/login">
+                  <Button variant="outline" size="sm">
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                    Register
+                  </Button>
+                </Link>
+                <Link href="/admin/login">
+                  <Button variant="outline" size="sm">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Admin
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-red-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-red-500"
+              aria-expanded={isOpen}
+            >
+              <span className="sr-only">Open main menu</span>
+              {isOpen ? (
+                <X className="block h-6 w-6" />
+              ) : (
+                <Menu className="block h-6 w-6" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Navigation */}
+      {isOpen && (
+        <div className="md:hidden">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t">
+            <Link
+              href="/"
+              className={`block px-3 py-2 text-base font-medium transition-colors ${
+                isActive('/') 
+                  ? 'text-red-600 bg-red-50' 
+                  : 'text-gray-700 hover:text-red-600 hover:bg-gray-50'
+              }`}
+              onClick={() => setIsOpen(false)}
+            >
+              Home
+            </Link>
+            <Link
+              href="/about"
+              className={`block px-3 py-2 text-base font-medium transition-colors ${
+                isActive('/about') 
+                  ? 'text-red-600 bg-red-50' 
+                  : 'text-gray-700 hover:text-red-600 hover:bg-gray-50'
+              }`}
+              onClick={() => setIsOpen(false)}
+            >
+              About
+            </Link>
+            <Link
+              href="/track"
+              className={`block px-3 py-2 text-base font-medium transition-colors ${
+                isActive('/track') 
+                  ? 'text-red-600 bg-red-50' 
+                  : 'text-gray-700 hover:text-red-600 hover:bg-gray-50'
+              }`}
+              onClick={() => setIsOpen(false)}
+            >
+              Track
+            </Link>
+            <Link
+              href="/booking"
+              className={`block px-3 py-2 text-base font-medium transition-colors ${
+                isActive('/booking') 
+                  ? 'text-red-600 bg-red-50' 
+                  : 'text-gray-700 hover:text-red-600 hover:bg-gray-50'
+              }`}
+              onClick={() => setIsOpen(false)}
+            >
+              Booking
+            </Link>
+            <Link
+              href="/contact"
+              className={`block px-3 py-2 text-base font-medium transition-colors ${
+                isActive('/contact') 
+                  ? 'text-red-600 bg-red-50' 
+                  : 'text-gray-700 hover:text-red-600 hover:bg-gray-50'
+              }`}
+              onClick={() => setIsOpen(false)}
+            >
+              Contact
+            </Link>
+            
+            {/* Mobile Auth Section */}
+            <div className="border-t pt-4">
+              {user ? (
+                <div className="space-y-2">
+                  <Link
+                    href="/dashboard"
+                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-red-600 hover:bg-gray-50"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <button
                     onClick={handleLogout}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center space-x-1 text-red-600 border-red-600 hover:bg-red-50"
+                    className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:text-red-600 hover:bg-gray-50"
                   >
-                    <LogOut className="h-4 w-4" />
-                    <span>Logout</span>
-                  </Button>
+                    Logout
+                  </button>
                 </div>
               ) : (
-                <div className="flex items-center space-x-3">
-                  <Button 
-                    onClick={openAdminLogin}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center space-x-1"
+                <div className="space-y-2">
+                  <Link
+                    href="/login"
+                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-red-600 hover:bg-gray-50"
+                    onClick={() => setIsOpen(false)}
                   >
-                    <Settings className="h-4 w-4" />
-                    <span>Admin</span>
-                  </Button>
-                  <Button 
-                    onClick={openRegister}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center space-x-1"
+                    Login
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-red-600 hover:bg-gray-50"
+                    onClick={() => setIsOpen(false)}
                   >
-                    <UserPlus className="h-4 w-4" />
-                    <span>Register</span>
-                  </Button>
-                  <Button 
-                    onClick={openUserLogin}
-                    size="sm"
-                    className="flex items-center space-x-1 bg-red-600 hover:bg-red-700"
+                    Register
+                  </Link>
+                  <Link
+                    href="/admin/login"
+                    className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-red-600 hover:bg-gray-50"
+                    onClick={() => setIsOpen(false)}
                   >
-                    <LogIn className="h-4 w-4" />
-                    <span>Login</span>
-                  </Button>
+                    Admin
+                  </Link>
                 </div>
               )}
             </div>
-
-            <div className="md:hidden flex items-center">
-              <button
-                aria-expanded={isOpen}
-                onClick={() => setIsOpen(!isOpen)}
-                className="text-gray-700 hover:text-red-600 transition-colors p-2 rounded-md"
-                aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
-                type="button"
-              >
-                {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
-            </div>
           </div>
-
-          {isOpen && (
-            <div className="md:hidden">
-              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-50">
-                <Link href="/" className="block px-3 py-2 text-gray-700 hover:text-red-600 transition-colors" onClick={() => setIsOpen(false)}>
-                  Home
-                </Link>
-                <Link href="/services" className="block px-3 py-2 text-gray-700 hover:text-red-600 transition-colors" onClick={() => setIsOpen(false)}>
-                  Services
-                </Link>
-                <Link href="/track" className="block px-3 py-2 text-gray-700 hover:text-red-600 transition-colors" onClick={() => setIsOpen(false)}>
-                  Track
-                </Link>
-                <Link href="/booking" className="block px-3 py-2 text-gray-700 hover:text-red-600 transition-colors" onClick={() => setIsOpen(false)}>
-                  Book Now
-                </Link>
-                <Link href="/contact" className="block px-3 py-2 text-gray-700 hover:text-red-600 transition-colors" onClick={() => setIsOpen(false)}>
-                  Contact
-                </Link>
-
-                <div className="border-t pt-4">
-                  {(user || admin) ? (
-                    <div className="space-y-2">
-                      <div className="px-3 py-2 text-sm text-gray-600">
-                        Welcome, <span className="font-semibold">{admin?.username || user?.name}</span>
-                      </div>
-                      <button type="button" onClick={handleDashboard} className="flex items-center space-x-2 w-full px-3 py-2 text-left text-gray-700 hover:text-red-600 transition-colors">
-                        <BarChart3 className="h-4 w-4" />
-                        <span>{admin ? 'Admin Panel' : 'Dashboard'}</span>
-                      </button>
-                      <button type="button" onClick={handleLogout} className="flex items-center space-x-2 w-full px-3 py-2 text-left text-red-600 hover:text-red-700 transition-colors">
-                        <LogOut className="h-4 w-4" />
-                        <span>Logout</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <button type="button" onClick={openAdminLogin} className="flex items-center space-x-2 w-full px-3 py-2 text-left text-gray-700 hover:text-red-600 transition-colors">
-                        <Settings className="h-4 w-4" />
-                        <span>Admin Login</span>
-                      </button>
-                      <button type="button" onClick={openRegister} className="flex items-center space-x-2 w-full px-3 py-2 text-left text-gray-700 hover:text-red-600 transition-colors">
-                        <UserPlus className="h-4 w-4" />
-                        <span>Register</span>
-                      </button>
-                      <button type="button" onClick={openUserLogin} className="flex items-center space-x-2 w-full px-3 py-2 text-left text-red-600 hover:text-red-700 transition-colors">
-                        <LogIn className="h-4 w-4" />
-                        <span>User Login</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
-      </nav>
-
-      {showLoginModal && (
-        <LoginModal 
-          isOpen={showLoginModal}
-          onClose={() => setShowLoginModal(false)}
-          loginType={loginType}
-        />
       )}
-
-      {showRegisterModal && (
-        <RegisterModal 
-          isOpen={showRegisterModal}
-          onClose={() => setShowRegisterModal(false)}
-        />
-      )}
-    </>
-  )
-}
-
-function LoginModal({ isOpen, onClose, loginType }: { isOpen: boolean; onClose: () => void; loginType: 'admin' | 'user' }) {
-  const [email, setEmail] = useState('')
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  
-  const { login } = useAuth()
-  const { login: adminLogin } = useAdminAuth()
-  const router = useRouter()
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError('')
-
-    try {
-      if (loginType === 'admin') {
-        await adminLogin(username, password)
-        onClose()
-        router.push('/admin/dashboard')
-      } else {
-        await login(email, password)
-        onClose()
-        router.push('/dashboard')
-      }
-    } catch (error: any) {
-      console.error('Login error:', error)
-      setError(error.message || 'Login failed')
-    }
-    
-    setIsLoading(false)
-  }
-
-  if (!isOpen) return null
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">
-            {loginType === 'admin' ? 'Admin Login' : 'User Login'}
-          </h2>
-          <button 
-            type="button"
-            onClick={onClose} 
-            className="text-gray-500 hover:text-gray-700"
-            aria-label="Close login dialog"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-          
-          {loginType === 'admin' ? (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="admin"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="admin123"
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="user@example.com"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                  placeholder="Password"
-                />
-              </div>
-            </>
-          )}
-
-          <Button 
-            type="submit" 
-            disabled={isLoading}
-            className="w-full bg-red-600 hover:bg-red-700"
-          >
-            {isLoading ? 'Signing in...' : 'Sign In'}
-          </Button>
-        </form>
-
-        <div className="mt-4 text-sm text-gray-600 text-center">
-          <p>Demo Credentials:</p>
-          {loginType === 'admin' ? (
-            <>
-              <p><strong>Username:</strong> admin</p>
-              <p><strong>Password:</strong> admin123</p>
-            </>
-          ) : (
-            <>
-              <p><strong>Email:</strong> user@example.com</p>
-              <p><strong>Password:</strong> user123</p>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function RegisterModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
-  
-  const { register } = useAuth()
-  const router = useRouter()
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long')
-      return
-    }
-
-    setIsLoading(true)
-
-    try {
-      const result = await register(name, email, password)
-      
-      if (result.success) {
-        onClose()
-        router.push('/dashboard')
-      } else {
-        setError(result.message || 'Registration failed')
-      }
-    } catch (error: any) {
-      setError(error.message || 'Registration failed')
-    }
-    
-    setIsLoading(false)
-  }
-
-  if (!isOpen) return null
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Create Account</h2>
-          <button 
-            type="button"
-            onClick={onClose} 
-            className="text-gray-500 hover:text-gray-700"
-            aria-label="Close registration dialog"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-              placeholder="Enter your full name"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-              placeholder="Enter your email address"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-              placeholder="Create a password (min 6 chars)"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-              placeholder="Confirm your password"
-            />
-          </div>
-
-          <Button 
-            type="submit" 
-            disabled={isLoading}
-            className="w-full bg-red-600 hover:bg-red-700"
-          >
-            {isLoading ? 'Creating Account...' : 'Create Account'}
-          </Button>
-        </form>
-      </div>
-    </div>
+    </nav>
   )
 }

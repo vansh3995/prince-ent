@@ -21,7 +21,8 @@ export default function AdminLoginForm() {
 
     try {
       await login(username, password)
-      router.push("/admin/dashboard")
+      // Use router.replace to avoid back navigation to login
+      router.replace("/admin/dashboard")
     } catch (error: any) {
       setError(error.message || "Login failed")
     } finally {

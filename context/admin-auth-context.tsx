@@ -37,7 +37,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Verify token with API route (Node.js runtime)
-      const response = await fetch('/api/auth/verify-token', {
+      const response = await fetch('/api/admin/auth/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token })
@@ -70,13 +70,17 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(error.message || 'Login failed')
       }
 
-      const { token, admin } = await response.json()
+      const data = await response.json()
+      const { token, admin } = data
       localStorage.setItem('admin-token', token)
       
       // Set cookie for middleware
-      document.cookie = `admin-token=${token}; path=/; max-age=86400; secure; samesite=lax`
+      const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+      document.cookie = `admin-token=${token}; path=/; max-age=86400; samesite=lax${isLocalhost ? "" : "; secure"}`
       
       setAdmin(admin)
+      // Redirect to admin dashboard after login
+      window.location.href = "/admin/dashboard"
     } catch (error) {
       throw error
     }

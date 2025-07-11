@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -6,8 +6,7 @@ import { Package, MapPin, Scale, Truck, Calendar, AlertCircle } from "lucide-rea
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/context/auth-context"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import PaymentModal from '@/components/payment/PaymentModal'
 
 interface FormData {
   from: string
@@ -51,22 +50,33 @@ export default function BookingPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
   const [estimatedCost, setEstimatedCost] = useState<number | null>(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [pendingBookingId, setPendingBookingId] = useState("")
 
   useEffect(() => {
+    console.log(" Booking page - Auth state:", { 
+      user: user?.email, 
+      authLoading,
+      hasToken: !!token
+    })
+    
+    // Only redirect if loading is complete and user is not authenticated
     if (!authLoading && !user) {
+      console.log(" Booking - Redirecting to login")
       router.push("/login?redirect=/booking")
       return
     }
 
     // Pre-fill user data if available
     if (user && !formData.customerName) {
+      console.log(" Pre-filling user data:", user)
       setFormData(prev => ({
         ...prev,
-        customerName: user.name || '',
-        customerEmail: user.email || ''
+        customerName: user.name || "",
+        customerEmail: user.email || ""
       }))
     }
-  }, [user, authLoading, router, formData.customerName])
+  }, [user, authLoading, token, router, formData.customerName])
 
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {}
@@ -146,32 +156,72 @@ export default function BookingPage() {
       return
     }
 
+    // Calculate cost first
+    if (!estimatedCost) {
+      calculateEstimatedCost()
+      if (!estimatedCost) {
+        setErrors({ submit: "Unable to calculate cost. Please check your inputs." })
+        return
+      }
+    }
+
     setIsLoading(true)
     
     try {
-      const response = await fetch("/api/bookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || "Booking failed")
-      }
-
-      const data = await response.json()
+      // Generate booking ID
+      const bookingId = `BK${Date.now()}`
+      setPendingBookingId(bookingId)
       
-      // Redirect to confirmation
-      router.push(`/booking/confirmation?id=${data.bookingId}`)
+      // Create booking data
+      const bookingData = {
+        ...formData,
+        id: bookingId,
+        userId: user?.id,
+        createdAt: new Date().toISOString(),
+        status: "pending_payment",
+        estimatedCost,
+        paymentStatus: "pending"
+      }
+      
+      // Store booking data temporarily
+      localStorage.setItem(`booking_${bookingId}`, JSON.stringify(bookingData))
+      
+      console.log("Booking created, opening payment modal:", bookingData)
+      
+      // Show payment modal
+      setShowPaymentModal(true)
+      
     } catch (error: any) {
-      console.error("Booking error:", error)
+      console.error("Booking creation error:", error)
       setErrors({ submit: error.message || "Failed to create booking. Please try again." })
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handlePaymentSuccess = (paymentData: any) => {
+    console.log("Payment successful:", paymentData)
+    
+    // Update booking with payment info
+    const bookingData = JSON.parse(localStorage.getItem(`booking_${pendingBookingId}`) || '{}')
+    bookingData.paymentStatus = 'paid'
+    bookingData.paymentId = paymentData.payment_id
+    bookingData.orderId = paymentData.order_id
+    bookingData.paidAt = new Date().toISOString()
+    bookingData.status = 'confirmed'
+    
+    localStorage.setItem(`booking_${pendingBookingId}`, JSON.stringify(bookingData))
+    
+    // Redirect to success page
+    router.push(`/booking/success?id=${pendingBookingId}`)
+  }
+
+  const handlePaymentClose = () => {
+    setShowPaymentModal(false)
+    // Clean up pending booking
+    if (pendingBookingId) {
+      localStorage.removeItem(`booking_${pendingBookingId}`)
+      setPendingBookingId("")
     }
   }
 
@@ -228,7 +278,7 @@ export default function BookingPage() {
         onChange={handleChange}
         required={required}
         className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-          errors[name] ? 'border-red-500' : 'border-gray-300'
+          errors[name] ? "border-red-500" : "border-gray-300"
         }`}
         placeholder={placeholder}
         aria-describedby={errors[name] ? `${name}-error` : undefined}
@@ -271,7 +321,7 @@ export default function BookingPage() {
         onChange={handleChange}
         required={required}
         className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-          errors[name] ? 'border-red-500' : 'border-gray-300'
+          errors[name] ? "border-red-500" : "border-gray-300"
         }`}
         aria-describedby={errors[name] ? `${name}-error` : undefined}
       >
@@ -421,7 +471,7 @@ export default function BookingPage() {
                   </div>
                   <div className="flex-1">
                     <InputField
-                      label="Package Value (?)"
+                      label="Package Value (₹)"
                       name="packageValue"
                       type="number"
                       placeholder="1000"
@@ -466,7 +516,7 @@ export default function BookingPage() {
                     required
                     rows={3}
                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.pickupAddress ? 'border-red-500' : 'border-gray-300'
+                      errors.pickupAddress ? "border-red-500" : "border-gray-300"
                     }`}
                     placeholder="Enter complete pickup address"
                     aria-describedby={errors.pickupAddress ? "pickupAddress-error" : undefined}
@@ -491,7 +541,7 @@ export default function BookingPage() {
                     required
                     rows={3}
                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      errors.deliveryAddress ? 'border-red-500' : 'border-gray-300'
+                      errors.deliveryAddress ? "border-red-500" : "border-gray-300"
                     }`}
                     placeholder="Enter complete delivery address"
                     aria-describedby={errors.deliveryAddress ? "deliveryAddress-error" : undefined}
@@ -530,7 +580,7 @@ export default function BookingPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
-                  ?{estimatedCost.toLocaleString()}
+                  ₹{estimatedCost.toLocaleString()}
                 </div>
                 <p className="text-sm text-gray-600 mt-1">
                   *This is an estimated cost. Final cost may vary based on actual weight and dimensions.
@@ -575,6 +625,21 @@ export default function BookingPage() {
             </CardContent>
           </Card>
         </form>
+
+        {showPaymentModal && (
+          <PaymentModal
+            isOpen={showPaymentModal}
+            onClose={handlePaymentClose}
+            onSuccess={handlePaymentSuccess}
+            amount={estimatedCost || 0}
+            bookingId={pendingBookingId}
+            customerInfo={{
+              name: formData.customerName,
+              email: formData.customerEmail,
+              phone: formData.customerPhone
+            }}
+          />
+        )}
       </div>
     </div>
   )

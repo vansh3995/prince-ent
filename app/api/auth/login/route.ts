@@ -3,56 +3,58 @@ import { generateToken } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, type } = await request.json()
+    const { email, password } = await request.json()
 
-    if (!email || !password) {
+    console.log('Login attempt:', { email, password })
+
+    // Demo user - replace with database check
+    const DEMO_USER = {
+      id: '1',
+      name: 'Demo User',
+      email: 'demo@example.com',
+      phone: '+91 9876543210',
+      password: 'demo123',
+      role: 'user'
+    }
+
+    // Validate credentials
+    if (email !== DEMO_USER.email || password !== DEMO_USER.password) {
       return NextResponse.json(
-        { success: false, message: 'Email and password required' },
-        { status: 400 }
+        { success: false, message: 'Invalid email or password' },
+        { status: 401 }
       )
     }
 
-    // For demo purposes, use hardcoded user credentials
-    if (email === 'user@example.com' && password === 'user123') {
-      const userData = {
-        id: 'user-001',
-        name: 'Demo User',
-        email: email,
-        role: 'user'
-      }
-
-      const token = generateToken({
-        userId: userData.id,
-        email: userData.email,
-        name: userData.name,
-        role: userData.role,
-        type: 'user'
-      })
-
-      const response = NextResponse.json({
-        success: true,
-        message: 'Login successful',
-        user: userData,
-        token
-      })
-
-      response.cookies.set('auth-token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 24 * 60 * 60 * 1000
-      })
-
-      return response
+    // Generate JWT token
+    const tokenPayload = {
+      id: DEMO_USER.id,
+      email: DEMO_USER.email,
+      name: DEMO_USER.name,
+      role: DEMO_USER.role
     }
 
-    return NextResponse.json(
-      { success: false, message: 'Invalid credentials' },
-      { status: 401 }
-    )
+    const token = generateToken(tokenPayload)
+
+    // User data to return (without password)
+    const userData = {
+      id: DEMO_USER.id,
+      name: DEMO_USER.name,
+      email: DEMO_USER.email,
+      phone: DEMO_USER.phone,
+      role: DEMO_USER.role
+    }
+
+    console.log('Login successful:', { userData, token })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Login successful',
+      user: userData,
+      token
+    })
 
   } catch (error) {
-    console.error('User login error:', error)
+    console.error('Login error:', error)
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: 500 }

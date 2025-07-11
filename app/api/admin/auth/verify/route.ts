@@ -1,52 +1,18 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 import { verifyToken } from '@/lib/auth'
 
-export async function GET(request: NextRequest) {
+export const runtime = 'nodejs'
+
+export async function POST(request: NextRequest) {
   try {
-    // Get token from Authorization header
-    const authHeader = request.headers.get('authorization')
-    let token = null
-
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      token = authHeader.substring(7)
-    }
-
-    // Also try to get from cookies as fallback
-    if (!token) {
-      token = request.cookies.get('admin-token')?.value
-    }
-
-    if (!token) {
-      return NextResponse.json(
-        { success: false, message: 'No token provided' },
-        { status: 401 }
-      )
-    }
-
+    const { token } = await request.json()
     const payload = verifyToken(token)
-
-    if (!payload || payload.type !== 'admin') {
-      return NextResponse.json(
-        { success: false, message: 'Invalid admin token' },
-        { status: 401 }
-      )
+    if (!payload) {
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 })
     }
-
-    return NextResponse.json({
-      success: true,
-      admin: {
-        id: payload.adminId,
-        username: payload.username,
-        email: payload.email,
-        role: payload.role
-      }
-    })
-
+    return NextResponse.json({ payload })
   } catch (error) {
-    console.error('Admin verification error:', error)
-    return NextResponse.json(
-      { success: false, message: 'Token verification failed' },
-      { status: 401 }
-    )
+    console.error('Token verification error:', error)
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
   }
 }
